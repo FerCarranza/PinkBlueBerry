@@ -3,47 +3,92 @@
   'use strict';
 
   function qs(sel){ return document.querySelector(sel); }
+  function qsa(sel){ return Array.from(document.querySelectorAll(sel)); }
 
-  function createBackdrop(){
-    let b = qs('.nav-backdrop');
-    if(!b){ b = document.createElement('div'); b.className = 'nav-backdrop'; document.body.appendChild(b); }
-    return b;
+  // Backdrop removed per requirement: no overlay element will be added
+  function createBackdrop(){ return null; }
+
+  // Focus trap helpers
+  let trap = { lastActive: null, handler: null };
+  function enableFocusTrap(container){
+    trap.lastActive = document.activeElement;
+    const focusables = getFocusable(container);
+    const first = focusables[0];
+    if(first) first.focus();
+    trap.handler = function(e){
+      if(e.key !== 'Tab') return;
+      const nodes = getFocusable(container);
+      if(!nodes.length) return;
+      const firstEl = nodes[0];
+      const lastEl = nodes[nodes.length-1];
+      if(e.shiftKey && document.activeElement === firstEl){ e.preventDefault(); lastEl.focus(); }
+      else if(!e.shiftKey && document.activeElement === lastEl){ e.preventDefault(); firstEl.focus(); }
+    };
+    document.addEventListener('keydown', trap.handler, true);
+  }
+  function disableFocusTrap(){
+    if(trap.handler) document.removeEventListener('keydown', trap.handler, true);
+    if(trap.lastActive && typeof trap.lastActive.focus === 'function'){
+      try{ trap.lastActive.focus(); }catch(e){}
+    }
+    trap.lastActive = null; trap.handler = null;
+  }
+  function getFocusable(container){
+    return Array.from(container.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+      .filter(el=>!el.hasAttribute('disabled') && el.tabIndex !== -1);
   }
 
   function open(nav, btn){
+    const STORE_KEY = 'pb_nav_open_v1';
     const header = qs('.navbar');
     const rect = header ? header.getBoundingClientRect() : { height: 0, top: 0 };
     const top = rect.bottom || rect.height || 56;
-    // set menu position and size so it sits under the header
-    nav.style.position = 'fixed';
-    nav.style.top = top + 'px';
-    nav.style.left = '0';
-    nav.style.right = '0';
-    nav.style.maxHeight = 'calc(100vh - ' + top + 'px)';
+    document.documentElement.style.setProperty('--nav-top', top + 'px');
     nav.classList.add('open');
+    document.body.classList.add('nav-open');
     nav.setAttribute('aria-hidden','false');
     if(btn) btn.setAttribute('aria-expanded','true');
 
-    const backdrop = createBackdrop();
-    backdrop.classList.add('visible');
-    backdrop.addEventListener('click', ()=> close(nav, btn));
+    // Backdrop intentionally not used
 
-    // allow interactive elements
-    nav.style.pointerEvents = 'auto';
-    Array.from(nav.querySelectorAll('a, button, input')).forEach(el=> el.tabIndex = 0);
+    // make interactive
+    qsa('.nav-links a, .nav-links button, .nav-links input').forEach(el=> el.tabIndex = 0);
     document.addEventListener('keydown', onKeyDown);
+    enableFocusTrap(nav);
+
+    // Proactively close other overlays that could interfere (cart drawer / modals)
+    try{
+      if(window.Cart && typeof window.Cart.close === 'function'){
+        window.Cart.close();
+        const cartBtn = document.getElementById('open-cart'); if(cartBtn) cartBtn.setAttribute('aria-expanded','false');
+      }
+      // Close booking/payment modals if open
+      const modals = ['booking-modal','payment-modal','cart-payment-modal'];
+      modals.forEach(id=>{
+        const el = document.getElementById(id);
+        if(el && el.getAttribute('aria-hidden') === 'false'){
+          // prefer dedicated close functions if exist
+          if(id==='booking-modal' && typeof window.closeBookingModal === 'function') window.closeBookingModal();
+          else if(id==='payment-modal' && typeof window.closePaymentModal === 'function') window.closePaymentModal();
+          else { el.setAttribute('aria-hidden','true'); el.style.display='none'; }
+        }
+      });
+    }catch(e){}
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify({ open: true })); }catch(e){}
   }
 
   function close(nav, btn){
+    const STORE_KEY = 'pb_nav_open_v1';
     if(!nav) return;
     nav.classList.remove('open');
+    document.body.classList.remove('nav-open');
     nav.setAttribute('aria-hidden','true');
     if(btn) btn.setAttribute('aria-expanded','false');
-    nav.style.pointerEvents = 'none';
-    Array.from(nav.querySelectorAll('a, button, input')).forEach(el=> el.tabIndex = -1);
-    const backdrop = qs('.nav-backdrop');
-    if(backdrop){ backdrop.classList.remove('visible'); backdrop.remove(); }
+    qsa('.nav-links a, .nav-links button, .nav-links input').forEach(el=> el.tabIndex = -1);
+    // No backdrop to manage
     document.removeEventListener('keydown', onKeyDown);
+    disableFocusTrap();
+    try{ localStorage.setItem(STORE_KEY, JSON.stringify({ open: false })); }catch(e){}
   }
 
   function onKeyDown(e){
@@ -55,19 +100,43 @@
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
+    // Remove any leftover nav-backdrop elements from the DOM
+    Array.from(document.querySelectorAll('.nav-backdrop')).forEach(el=> el.remove());
     const nav = qs('.nav-links');
     if(!nav) return;
     // ensure ARIA defaults
     nav.setAttribute('role','menu');
     nav.setAttribute('aria-hidden','true');
+    // set role=menuitem on links
+    qsa('.nav-links a').forEach(a=>{ a.setAttribute('role','menuitem'); });
 
     // create hamburger if missing
     let btn = qs('#hamburger');
     if(!btn){ btn = document.createElement('button'); btn.id = 'hamburger'; btn.className = 'hamburger'; btn.setAttribute('aria-label','Abrir menú'); btn.setAttribute('aria-expanded','false'); btn.textContent = '☰'; const actions = qs('.nav-actions') || qs('.container'); if(actions) actions.appendChild(btn); }
 
-    // start with nav non-interactive
-    nav.style.pointerEvents = 'none';
-    Array.from(nav.querySelectorAll('a, button, input')).forEach(el=> el.tabIndex = -1);
+    // Responsive interactivity controller
+    const mql = window.matchMedia('(min-width: 900px)');
+    function isDesktop(){ return mql.matches; }
+    function enableDesktopMode(){
+      // clear mobile styles
+      nav.classList.remove('open');
+      document.body.classList.remove('nav-open');
+      qsa('.nav-links a, .nav-links button, .nav-links input').forEach(el=> el.tabIndex = 0);
+      nav.setAttribute('aria-hidden','false');
+      // remove any leftover backdrop
+      const backdrop = qs('.nav-backdrop'); if(backdrop){ backdrop.classList.remove('visible'); backdrop.remove(); }
+      if(btn) btn.setAttribute('aria-expanded','false');
+    }
+    function enableMobileMode(){
+      // hidden and non-interactive until opened
+      if(!nav.classList.contains('open')){
+        qsa('.nav-links a, .nav-links button, .nav-links input').forEach(el=> el.tabIndex = -1);
+        nav.setAttribute('aria-hidden','true');
+      }
+    }
+    function updateNavMode(){ if(isDesktop()) enableDesktopMode(); else enableMobileMode(); }
+    updateNavMode();
+    mql.addEventListener('change', updateNavMode);
 
     btn.addEventListener('click', (ev)=>{
       ev.preventDefault(); ev.stopPropagation();
@@ -75,149 +144,97 @@
       if(isOpen) close(nav, btn); else open(nav, btn);
     });
 
+    // Close menu on link click and smooth-scroll to hash targets
+    nav.addEventListener('click', (e)=>{
+      // If on mobile and nav is not open yet, first tap opens the menu
+      if(!isDesktop() && !nav.classList.contains('open')){
+        e.preventDefault();
+        open(nav, btn);
+        return;
+      }
+      const a = e.target.closest && e.target.closest('a');
+      if(!a) return;
+      const href = a.getAttribute('href') || '';
+      if(href.startsWith('#')){
+        e.preventDefault();
+        const id = href.slice(1);
+        const target = document.getElementById(id);
+        close(nav, btn);
+        // If nav link explicitly requests opening the booking modal, do so
+        if(a.hasAttribute('data-open-booking') && typeof window.openBookingModal === 'function'){
+          // slight timeout to let menu close animation finish
+          setTimeout(()=> window.openBookingModal(), 50);
+        } else if(target){
+          try{ target.scrollIntoView({ behavior: 'smooth' }); }
+          catch(err){ window.location.hash = href; }
+        } else {
+          // fallback: update hash so browser scrolls
+          window.location.hash = href;
+        }
+      } else {
+        // For external links or other pages, just close the menu and allow navigation
+        close(nav, btn);
+      }
+    });
+
+    // Active link highlighting
+    function clearActive(){ nav.querySelectorAll('a').forEach(l=> l.classList.remove('active')); }
+    function setActive(href){ clearActive(); const a = nav.querySelector(`a[href="${href}"]`); if(a) a.classList.add('active'); }
+    // If we're on the admin page, highlight the Admin link and skip observer
+    if(window.location.pathname.endsWith('admin.html')){
+      setActive('admin.html');
+    } else {
+      // Set by hash on load, else default to #home
+      const initialHash = window.location.hash || '#home';
+      setActive(initialHash);
+      // Observe sections to update while scrolling
+      const sections = [
+        { id: 'home', href: '#home' },
+        { id: 'services', href: '#services' },
+        { id: 'booking', href: '#booking' },
+        { id: 'shop', href: '#shop' }
+      ];
+      const linkMap = new Map();
+      sections.forEach(s=>{ const link = nav.querySelector(`a[href="${s.href}"]`); if(link) linkMap.set(s.id, link); });
+      const observer = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          const id = entry.target.id;
+          const link = linkMap.get(id);
+          if(!link) return;
+          if(entry.isIntersecting){ clearActive(); link.classList.add('active'); }
+        });
+      }, { rootMargin: '-40% 0px -55% 0px', threshold: 0.01 });
+      sections.forEach(s=>{ const el = document.getElementById(s.id); if(el) observer.observe(el); });
+    }
+
     // ensure resize recomputes position when open
     window.addEventListener('resize', ()=>{
+      updateNavMode();
       if(nav.classList.contains('open')){
-        // recompute top
         const header = qs('.navbar');
         const rect = header ? header.getBoundingClientRect() : { bottom: 56 };
         const top = rect.bottom || rect.height || 56;
-        nav.style.top = top + 'px';
-        nav.style.maxHeight = 'calc(100vh - ' + top + 'px)';
-      }
-    });
-  });
-})();
-// nav.js - simple hamburger menu toggle
-(function(){
-  function setAriaInitial(nav){
-    if(!nav) return;
-    nav.setAttribute('role','menu');
-    nav.setAttribute('aria-hidden', 'true');
-    // mark each link as menuitem and make unfocusable until open
-    const links = Array.from(nav.querySelectorAll('a'));
-    links.forEach(a=>{ a.setAttribute('role','menuitem'); a.setAttribute('tabindex','-1'); });
-  }
-
-  function enableMenuFocus(nav){
-    const links = Array.from(nav.querySelectorAll('a'));
-    links.forEach(a=> a.setAttribute('tabindex','0'));
-    if(links.length) links[0].focus();
-  }
-
-  function disableMenuFocus(nav){
-    const links = Array.from(nav.querySelectorAll('a'));
-    links.forEach(a=> a.setAttribute('tabindex','-1'));
-  }
-
-  function openMenu(){
-    const nav = document.querySelector('.nav-links');
-    const btn = document.getElementById('hamburger');
-    if(!nav || !btn) return;
-    // ensure backdrop exists
-  let backdrop = document.querySelector('.nav-backdrop');
-  if(!backdrop){ backdrop = document.createElement('div'); backdrop.className = 'nav-backdrop'; document.body.appendChild(backdrop); }
-  // activate backdrop on next tick so the initial click that opened the menu doesn't immediately trigger it
-  setTimeout(()=> backdrop.classList.add('visible'), 50);
-    nav.classList.add('open');
-    nav.setAttribute('aria-hidden','false');
-    btn.setAttribute('aria-expanded','true');
-    enableMenuFocus(nav);
-    try{ if(window && window.console && window.console.log) console.log('[nav] openMenu called'); }catch(e){}
-    // add keydown listener for Esc and Tab trap
-    document.addEventListener('keydown', onKeyDown);
-    // backdrop click closes menu
-    backdrop.addEventListener('click', closeMenu);
-    // Force inline z-index and pointer-events to avoid stacking/context issues on mobile
-    try{
-      backdrop.style.zIndex = '2001';
-      backdrop.style.pointerEvents = 'auto';
-      nav.style.zIndex = '2002';
-      nav.style.pointerEvents = 'auto';
-      // ensure child links are interactive
-      Array.from(nav.querySelectorAll('a')).forEach(a=>{ a.style.pointerEvents='auto'; });
-    }catch(e){}
-  }
-
-  function closeMenu(){
-    const nav = document.querySelector('.nav-links');
-    const btn = document.getElementById('hamburger');
-    const backdrop = document.querySelector('.nav-backdrop');
-    if(!nav || !btn) return;
-    nav.classList.remove('open');
-    nav.setAttribute('aria-hidden','true');
-    btn.setAttribute('aria-expanded','false');
-    disableMenuFocus(nav);
-    btn.focus();
-    document.removeEventListener('keydown', onKeyDown);
-    if(backdrop){ backdrop.classList.remove('visible'); backdrop.removeEventListener('click', closeMenu); }
-    try{ if(window && window.console && window.console.log) console.log('[nav] closeMenu called'); }catch(e){}
-    // clean inline styles
-    try{
-      if(backdrop){ backdrop.style.pointerEvents='none'; backdrop.style.zIndex=''; }
-      nav.style.zIndex=''; nav.style.pointerEvents='';
-      Array.from(nav.querySelectorAll('a')).forEach(a=>{ a.style.pointerEvents=''; });
-    }catch(e){}
-  }
-
-  function onKeyDown(e){
-    const nav = document.querySelector('.nav-links');
-    if(!nav || !nav.classList.contains('open')) return;
-    if(e.key === 'Escape'){
-      closeMenu(); return;
-    }
-    if(e.key === 'Tab'){
-      // focus trap inside nav
-      const focusable = Array.from(nav.querySelectorAll('a')).filter(x=>x.tabIndex>=0);
-      if(!focusable.length) return;
-      const first = focusable[0]; const last = focusable[focusable.length-1];
-      if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
-      else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    // try to find nav; support legacy selectors
-    const nav = document.querySelector('.nav-links') || document.querySelector('#main-nav') || document.querySelector('.main-nav');
-    let btn = document.getElementById('hamburger');
-
-    // If no hamburger button exists, create one and append to .nav-actions or .container
-    if(!btn){
-      btn = document.createElement('button');
-      btn.id = 'hamburger';
-      btn.className = 'hamburger';
-      btn.setAttribute('aria-label','Abrir menú');
-      btn.setAttribute('aria-expanded','false');
-      btn.textContent = '☰';
-      const actions = document.querySelector('.nav-actions') || document.querySelector('.container');
-      if(actions) actions.appendChild(btn);
-    }
-    setAriaInitial(nav);
-    if(btn){
-      btn.addEventListener('click', (ev)=>{
-        ev.stopPropagation();
-        try{ if(window && window.console && window.console.log) console.log('[nav] hamburger clicked'); }catch(e){}
-        const open = nav && nav.classList.contains('open');
-        if(open) closeMenu(); else openMenu();
-      });
-    }
-
-    // close when clicking the backdrop on small screens (more reliable)
-    document.addEventListener('click', (e)=>{
-      if(window.matchMedia && window.matchMedia('(max-width:900px)').matches){
-        const backdrop = document.querySelector('.nav-backdrop');
-        if(backdrop && (backdrop === e.target || backdrop.contains(e.target))){
-          closeMenu();
-        }
+        document.documentElement.style.setProperty('--nav-top', top + 'px');
       }
     });
 
-    // close on resize to desktop
-    window.addEventListener('resize', ()=>{
-      if(window.matchMedia && window.matchMedia('(min-width:901px)').matches){ closeMenu(); }
-    });
+    // Restore saved mobile open state (only on mobile)
+    try{
+      const raw = localStorage.getItem('pb_nav_open_v1');
+      const obj = raw ? JSON.parse(raw) : null;
+      if(obj && obj.open && !isDesktop()){
+        // ensure correct top
+        const header = qs('.navbar');
+        const rect = header ? header.getBoundingClientRect() : { bottom: 56 };
+        const top = rect.bottom || rect.height || 56;
+        document.documentElement.style.setProperty('--nav-top', top + 'px');
+        open(nav, btn);
+      }
+    }catch(e){}
   });
 
-  // expose for debugging
+  // Expose a tiny API for debugging and programmatic control
+  function openMenu(){ const nav = qs('.nav-links'); const btn = qs('#hamburger'); if(nav) open(nav, btn); }
+  function closeMenu(){ const nav = qs('.nav-links'); const btn = qs('#hamburger'); if(nav) close(nav, btn); }
   window.NavMenu = { open: openMenu, close: closeMenu };
 })();

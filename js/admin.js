@@ -454,10 +454,37 @@
     document.getElementById('export-csv').addEventListener('click', exportCSV);
   }
 
+  function bindFiltersToggle(){
+    const aside = document.querySelector('.admin-sidebar');
+    const btn = document.getElementById('filters-toggle');
+    const container = document.getElementById('filters-container');
+    if(!aside || !btn || !container) return;
+    const STORE_KEY = 'pb_admin_filters_collapsed_v1';
+    function setCollapsed(collapsed){
+      if(collapsed){
+        aside.classList.add('collapsed');
+        btn.setAttribute('aria-expanded','false');
+        btn.textContent = 'Mostrar filtros';
+      } else {
+        aside.classList.remove('collapsed');
+        btn.setAttribute('aria-expanded','true');
+        btn.textContent = 'Ocultar filtros';
+      }
+      try{ localStorage.setItem(STORE_KEY, JSON.stringify({ collapsed })); }catch(e){}
+    }
+    // collapse by default on small screens
+    function isSmall(){ return window.matchMedia && window.matchMedia('(max-width: 900px)').matches; }
+    // load preference if exists
+    let pref = null; try{ const raw = localStorage.getItem(STORE_KEY); if(raw){ const obj = JSON.parse(raw); pref = (typeof obj.collapsed === 'boolean') ? obj.collapsed : null; } }catch(e){}
+    if(pref === null){ setCollapsed(isSmall()); } else { setCollapsed(pref); }
+    btn.addEventListener('click', ()=>{ const expanded = btn.getAttribute('aria-expanded')==='true'; setCollapsed(expanded); });
+    window.addEventListener('resize', ()=>{ if(pref===null){ setCollapsed(isSmall()); } });
+  }
+
   // On load
   document.addEventListener('DOMContentLoaded', ()=>{
     renderProducts(); renderReservations(); bind();
-    populateFilterControls(); bindModalActions(); bindFilterActions();
+    populateFilterControls(); bindModalActions(); bindFilterActions(); bindFiltersToggle();
   });
 
   // Expose helper for other scripts: allow saving reservations

@@ -13,8 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
     renderServices();
     renderProducts();
     renderStylists();
-    // Initialize cart UI from Cart module
-    if(window.Cart) Cart.load();
     showBookingStep(1);
 });
 
@@ -62,11 +60,7 @@ function renderStylists(){
         });
 }
 
-// Open-cart button wiring
-document.addEventListener('DOMContentLoaded', ()=>{
-    const openCartBtn = document.getElementById('open-cart');
-    if(openCartBtn){ openCartBtn.addEventListener('click', ()=>{ toggleCart(); }); }
-});
+// Cart open/close and event wiring handled by js/cart.js
 
 // FUNCIONES DE PRODUCTOS
 function renderProducts(filter = 'all') {
@@ -98,60 +92,14 @@ function filterProducts(category, event) {
     renderProducts(category);
 }
 
-// FUNCIONES DEL CARRITO
-// Integración con Cart module (cart.js)
+// CARRITO: delegar completamente en Cart (cart.js)
 function addToCart(productId) {
     const product = (appProducts || products).find(p => Number(p.id) === Number(productId));
-    if(window.Cart){ Cart.addToCart(product); showNotification('Producto agregado al carrito!'); }
-    else {
-        const existingItem = cart.find(item => item.id === productId);
-        if (existingItem) existingItem.quantity += 1; else cart.push({ ...product, quantity: 1 });
-        updateCartDisplay(); showNotification('Producto agregado al carrito!');
+    if(window.Cart){
+        Cart.addToCart(product);
+        showNotification('Producto agregado al carrito!');
     }
 }
-
-function updateCartDisplay() {
-    updateCartCount();
-    updateCartItems();
-    updateCartTotal();
-}
-
-function updateCartCount() { if(window.Cart) Cart.load(); else { const count = cart.reduce((t,i)=>t+i.quantity,0); document.getElementById('cart-count').textContent = count; } }
-
-function updateCartItems() {
-    const cartItemsDiv = document.getElementById('cart-items');
-    cartItemsDiv.innerHTML = '';
-    
-    if (cart.length === 0) {
-        cartItemsDiv.innerHTML = '<p>Tu carrito está vacío</p>';
-        return;
-    }
-    
-    cart.forEach(item => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'cart-item';
-        itemDiv.innerHTML = `
-            <div style="padding: 10px; border-bottom: 1px solid #eee;">
-                <h4>${item.name}</h4>
-                <p>$${item.price} x ${item.quantity} = $${item.price * item.quantity}</p>
-                <button onclick="removeFromCart(${item.id})">Eliminar</button>
-            </div>
-        `;
-        cartItemsDiv.appendChild(itemDiv);
-    });
-}
-
-function updateCartTotal() {
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    document.getElementById('cart-total').textContent = `$${total}`;
-}
-
-function removeFromCart(productId) {
-    cart = cart.filter(item => item.id !== productId);
-    updateCartDisplay();
-}
-
-function toggleCart() { const panel = document.getElementById('cart-panel'); const hidden = panel.hasAttribute('hidden'); if(hidden){ panel.removeAttribute('hidden'); panel.setAttribute('aria-hidden','false'); } else { panel.setAttribute('hidden',''); panel.setAttribute('aria-hidden','true'); } }
 
 // NAVEGACIÓN
 function scrollToBooking() {

@@ -336,6 +336,8 @@ function openPaymentModal(){
     if(!modal) return;
     modal.style.display = 'flex';
     modal.setAttribute('aria-hidden','false');
+    lockBodyScroll(true);
+    setupFocusTrap(modal);
 }
 
 function closePaymentModal(){
@@ -343,6 +345,8 @@ function closePaymentModal(){
     if(!modal) return;
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden','true');
+    releaseFocusTrap();
+    lockBodyScroll(false);
 }
 
 function validatePaymentForm(){
@@ -378,6 +382,16 @@ document.addEventListener('DOMContentLoaded', ()=>{
             if(reservation){ reservation.paid = true; persistAndFinalize(reservation); window._pendingReservation = null; }
             closePaymentModal();
         }, 1200);
+    });
+
+    // Global Escape handler to close modals when open
+    document.addEventListener('keydown', (e)=>{
+        if(e.key === 'Escape'){
+            const bookingOpen = document.getElementById('booking-modal');
+            const paymentOpen = document.getElementById('payment-modal');
+            if(paymentOpen && paymentOpen.getAttribute('aria-hidden') === 'false'){ closePaymentModal(); }
+            else if(bookingOpen && bookingOpen.getAttribute('aria-hidden') === 'false'){ closeBookingModal(); }
+        }
     });
 });
 
@@ -494,6 +508,8 @@ function openBookingModal(){
     if(!modal) return;
     modal.setAttribute('aria-hidden','false');
     modal.style.display = 'flex';
+    lockBodyScroll(true);
+    setupFocusTrap(modal);
     showBookingStep(currentBooking.step || 1);
 }
 
@@ -502,6 +518,8 @@ function closeBookingModal(){
     if(!modal) return;
     modal.setAttribute('aria-hidden','true');
     modal.style.display = 'none';
+    releaseFocusTrap();
+    lockBodyScroll(false);
 }
 
 // Wire modal controls on DOM ready
@@ -667,3 +685,51 @@ button:disabled {
 
 // Agregar estilos al documento
 document.head.insertAdjacentHTML('beforeend', bookingStyles);
+
+// ===== Accesibilidad de modales: focus trap y helpers =====
+let _focusTrap = {
+    root: null,
+    lastActive: null,
+    handler: null
+};
+
+function getFocusable(container){
+    if(!container) return [];
+    return Array.from(container.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+        .filter(el => !el.hasAttribute('disabled') && el.tabIndex !== -1 && el.offsetParent !== null);
+}
+
+function setupFocusTrap(modal){
+    const panel = modal.querySelector('.modal-panel');
+    _focusTrap.lastActive = document.activeElement;
+    _focusTrap.root = modal;
+    const focusables = getFocusable(modal);
+    // Ensure panel can receive focus
+    if(panel && panel.tabIndex < 0) panel.tabIndex = -1;
+    const first = focusables[0] || panel;
+    if(first) first.focus(); else if(panel) panel.focus();
+    // keydown handler
+    _focusTrap.handler = function(e){
+        if(e.key !== 'Tab') return;
+        const nodes = getFocusable(modal);
+        if(!nodes.length) { e.preventDefault(); return; }
+        const firstEl = nodes[0];
+        const lastEl = nodes[nodes.length - 1];
+        if(e.shiftKey && document.activeElement === firstEl){ e.preventDefault(); lastEl.focus(); }
+        else if(!e.shiftKey && document.activeElement === lastEl){ e.preventDefault(); firstEl.focus(); }
+    };
+    document.addEventListener('keydown', _focusTrap.handler, true);
+}
+
+function releaseFocusTrap(){
+    if(_focusTrap.handler){ document.removeEventListener('keydown', _focusTrap.handler, true); }
+    if(_focusTrap.lastActive && typeof _focusTrap.lastActive.focus === 'function'){
+        try{ _focusTrap.lastActive.focus(); }catch(e){}
+    }
+    _focusTrap.root = null; _focusTrap.lastActive = null; _focusTrap.handler = null;
+}
+
+function lockBodyScroll(lock){
+    if(lock){ document.body.style.overflow = 'hidden'; }
+    else { document.body.style.overflow = ''; }
+}

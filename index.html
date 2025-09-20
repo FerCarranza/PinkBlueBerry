@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Pink Blueberry Salon</title>
+    <meta name="description" content="The Pink Blueberry: salón de belleza de lujo. Reserva servicios premium, compra productos destacados y conoce a nuestras estilistas expertas.">
+    <meta name="theme-color" content="#ec4899">
+    <meta property="og:title" content="The Pink Blueberry Salon">
+    <meta property="og:description" content="Reserva servicios de belleza premium y compra productos destacados.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="Spanish/Copy of pink_blueberry_luxury_logo_5.png">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="Spanish/Copy of pink_blueberry_luxury_logo_5.png">
 </head>
@@ -22,7 +28,7 @@
                 <li><a href="admin.html">Admin</a></li>
             </ul>
             <div class="nav-actions">
-                <div class="cart-icon" id="open-cart" aria-hidden="true">🛒 <span id="cart-count">0</span></div>
+                <button class="cart-icon" id="open-cart" aria-label="Abrir carrito" aria-haspopup="dialog" aria-expanded="false">🛒 <span id="cart-count">0</span></button>
                 <button id="hamburger" class="hamburger" aria-label="Abrir menú" aria-expanded="false">☰</button>
             </div>
         </div>
@@ -65,7 +71,7 @@
     </section>
 
         <!-- Modal de Reservas Multi-paso -->
-        <div id="booking-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="booking-modal-title">
+        <div id="booking-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
             <div class="modal-backdrop" id="booking-backdrop"></div>
             <div class="modal-panel" role="document">
                 <header class="modal-header">
@@ -83,7 +89,7 @@
         </div>
 
             <!-- Modal de Pago (Mock) -->
-            <div id="payment-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="payment-modal-title" style="display:none;">
+            <div id="payment-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title" style="display:none;">
                 <div class="modal-backdrop" id="payment-backdrop"></div>
                 <div class="modal-panel" role="document">
                     <header class="modal-header">
@@ -123,20 +129,62 @@
                 </div>
             </div>
 
-    <div id="cart-panel" hidden aria-hidden="true">
-      <div class="cart-content">
-        <h3>Tu Carrito</h3>
-        <ul id="cart-items"></ul>
-        <div class="cart-total">Total: $<span id="cart-total">0</span></div>
-        <button id="checkout-btn" class="btn-primary">Checkout (mock)</button>
+    <aside id="cart-panel" class="cart-drawer" aria-hidden="true" hidden role="dialog" aria-labelledby="cart-title" aria-modal="true">
+      <div class="cart-drawer-inner">
+        <header class="cart-header">
+          <h3 id="cart-title">Tu Carrito</h3>
+          <button id="cart-close" class="btn icon" aria-label="Cerrar carrito">✕</button>
+        </header>
+        <main class="cart-body">
+          <ul id="cart-items" class="cart-list" aria-live="polite"></ul>
+        </main>
+        <footer class="cart-footer">
+          <div class="cart-summary">
+            <div><span class="label">Subtotal</span><span>$<span id="cart-subtotal">0.00</span></span></div>
+            <div><span class="label">Impuestos</span><span>$<span id="cart-taxes">0.00</span></span></div>
+            <div class="total"><span class="label">Total</span><span>$<span id="cart-total">0.00</span></span></div>
+          </div>
+          <button id="checkout-btn" class="btn-primary full">Pagar ahora</button>
+        </footer>
+      </div>
+    </aside>
+
+    <!-- Modal de pago del carrito (mock) -->
+    <div id="cart-payment-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-payment-title" style="display:none;">
+      <div class="modal-backdrop"></div>
+      <div class="modal-panel" role="document">
+        <header class="modal-header">
+          <h3 id="cart-payment-title">Pago del Carrito</h3>
+          <button id="cp-close" aria-label="Cerrar">✕</button>
+        </header>
+        <main class="modal-body">
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>Nombre completo</label>
+              <input id="cp-name" placeholder="Tu nombre" autocomplete="name" />
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>Email</label>
+              <input id="cp-email" type="email" placeholder="tu@email.com" autocomplete="email" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Número de tarjeta</label>
+            <input id="cp-card" inputmode="numeric" placeholder="1234 5678 9012 3456" />
+          </div>
+        </main>
+        <footer class="modal-footer">
+          <button id="cp-cancel" class="btn">Cancelar</button>
+          <button id="cp-submit" class="btn btn-primary">Pagar</button>
+        </footer>
       </div>
     </div>
 
-    <script src="js/data.js"></script>
-    <script src="js/cart.js"></script>
-    <script src="js/booking.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/petals.js"></script>
-    <script src="js/nav.js"></script>
+    <script src="js/data.js" defer></script>
+    <script src="js/cart.js" defer></script>
+    <script src="js/booking.js" defer></script>
+    <script src="js/main.js" defer></script>
+    <script src="js/petals.js" defer></script>
+    <script src="js/nav.js" defer></script>
 </body>
 </html>
