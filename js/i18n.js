@@ -144,6 +144,21 @@
       ,action_mark_pending: 'Marcar Pendiente'
       ,action_notify: 'Notificar'
       ,action_delete: 'Eliminar'
+      ,add_to_cart: 'Agregar al Carrito'
+      ,booking_modal_title: 'Reservar Cita'
+      ,booking_prev: 'Atrás'
+      ,booking_next: 'Siguiente'
+      ,payment_modal_title: 'Pago con Tarjeta (Mock)'
+      ,payment_cancel: 'Cancelar'
+      ,payment_submit: 'Pagar'
+      ,services_title: 'Nuestros Servicios'
+      ,shop_title: 'Productos Destacados'
+      ,stylists_title: 'Conoce a Nuestros Estilistas'
+      ,cart_title: 'Tu Carrito'
+      ,subtotal_label: 'Subtotal'
+      ,taxes_label: 'Impuestos'
+      ,total_label: 'Total'
+      ,checkout_now: 'Pagar ahora'
     },
     en: {
       nav_home: 'Home',
@@ -285,6 +300,21 @@
       ,action_mark_pending: 'Mark Pending'
       ,action_notify: 'Notify'
       ,action_delete: 'Delete'
+      ,add_to_cart: 'Add to Cart'
+      ,booking_modal_title: 'Book Appointment'
+      ,booking_prev: 'Back'
+      ,booking_next: 'Next'
+      ,payment_modal_title: 'Card Payment (Mock)'
+      ,payment_cancel: 'Cancel'
+      ,payment_submit: 'Pay'
+      ,services_title: 'Our Services'
+      ,shop_title: 'Featured Products'
+      ,stylists_title: 'Meet Our Stylists'
+      ,cart_title: 'Your Cart'
+      ,subtotal_label: 'Subtotal'
+      ,taxes_label: 'Taxes'
+      ,total_label: 'Total'
+      ,checkout_now: 'Checkout Now'
     }
   };
 

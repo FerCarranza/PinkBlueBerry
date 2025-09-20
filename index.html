@@ -48,21 +48,21 @@
 
     <section id="services" class="services">
         <div class="container">
-            <h2>Nuestros Servicios</h2>
+            <h2 data-i18n="services_title">Nuestros Servicios</h2>
             <div id="services-grid" class="services-grid"></div>
         </div>
     </section>
 
     <section id="shop" class="shop">
         <div class="container">
-            <h2>Productos Destacados</h2>
+            <h2 data-i18n="shop_title">Productos Destacados</h2>
             <div id="products-grid" class="products-grid"></div>
         </div>
     </section>
 
     <section id="stylists" class="stylists">
         <div class="container">
-            <h2>Conoce a Nuestros Estilistas</h2>
+            <h2 data-i18n="stylists_title">Conoce a Nuestros Estilistas</h2>
             <div id="stylists-grid" class="stylists-grid"></div>
         </div>
     </section>
@@ -74,15 +74,15 @@
             <div class="modal-backdrop" id="booking-backdrop"></div>
             <div class="modal-panel" role="document">
                 <header class="modal-header">
-                    <h3 id="booking-modal-title">Reservar Cita</h3>
+                    <h3 id="booking-modal-title" data-i18n="booking_modal_title">Reservar Cita</h3>
                     <button id="booking-close" aria-label="Cerrar">✕</button>
                 </header>
                 <main class="modal-body" id="booking-modal-body">
                     <!-- booking.js renderizará pasos aquí -->
                 </main>
                 <footer class="modal-footer">
-                    <button id="booking-prev" class="btn">Atrás</button>
-                    <button id="booking-next" class="btn btn-primary">Siguiente</button>
+                    <button id="booking-prev" class="btn" data-i18n="booking_prev">Atrás</button>
+                    <button id="booking-next" class="btn btn-primary" data-i18n="booking_next">Siguiente</button>
                 </footer>
             </div>
         </div>
@@ -92,7 +92,7 @@
                 <div class="modal-backdrop" id="payment-backdrop"></div>
                 <div class="modal-panel" role="document">
                     <header class="modal-header">
-                        <h3 id="payment-modal-title">Pago con Tarjeta (Mock)</h3>
+                        <h3 id="payment-modal-title" data-i18n="payment_modal_title">Pago con Tarjeta (Mock)</h3>
                         <button id="payment-close" aria-label="Cerrar">✕</button>
                     </header>
                     <main class="modal-body" id="payment-modal-body">
@@ -122,8 +122,8 @@
                         </form>
                     </main>
                     <footer class="modal-footer">
-                        <button id="payment-cancel" class="btn">Cancelar</button>
-                        <button id="payment-submit" class="btn btn-primary">Pagar</button>
+                        <button id="payment-cancel" class="btn" data-i18n="payment_cancel">Cancelar</button>
+                        <button id="payment-submit" class="btn btn-primary" data-i18n="payment_submit">Pagar</button>
                     </footer>
                 </div>
             </div>
@@ -131,7 +131,7 @@
     <aside id="cart-panel" class="cart-drawer" aria-hidden="true" hidden role="dialog" aria-labelledby="cart-title" aria-modal="true">
       <div class="cart-drawer-inner">
         <header class="cart-header">
-          <h3 id="cart-title">Tu Carrito</h3>
+          <h3 id="cart-title" data-i18n="cart_title">Tu Carrito</h3>
           <button id="cart-close" class="btn icon" aria-label="Cerrar carrito">✕</button>
         </header>
         <main class="cart-body">
@@ -139,11 +139,11 @@
         </main>
         <footer class="cart-footer">
           <div class="cart-summary">
-            <div><span class="label">Subtotal</span><span>$<span id="cart-subtotal">0.00</span></span></div>
-            <div><span class="label">Impuestos</span><span>$<span id="cart-taxes">0.00</span></span></div>
-            <div class="total"><span class="label">Total</span><span>$<span id="cart-total">0.00</span></span></div>
+            <div><span class="label" data-i18n="subtotal_label">Subtotal</span><span>$<span id="cart-subtotal">0.00</span></span></div>
+            <div><span class="label" data-i18n="taxes_label">Impuestos</span><span>$<span id="cart-taxes">0.00</span></span></div>
+            <div class="total"><span class="label" data-i18n="total_label">Total</span><span>$<span id="cart-total">0.00</span></span></div>
           </div>
-          <button id="checkout-btn" class="btn-primary full">Pagar ahora</button>
+          <button id="checkout-btn" class="btn-primary full" data-i18n="checkout_now">Pagar ahora</button>
         </footer>
       </div>
     </aside>

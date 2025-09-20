@@ -133,7 +133,7 @@ function renderProducts(filter = 'all') {
                 <p class="product-price">$${product.price}</p>
                 <p>${product.description}</p>
                 <div class="actions">
-                  <button class="btn btn-primary add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}">Agregar al Carrito</button>
+                  <button class="btn btn-primary add-to-cart" data-id="${product.id}" data-name="${product.name}" data-price="${product.price}">${(window.i18n? i18n.t('add_to_cart') : 'Agregar al Carrito')}</button>
                 </div>
             </div>
         `;
