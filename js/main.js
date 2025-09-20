@@ -12,9 +12,29 @@ function loadStoredProducts(){
             const id = Number(d.id);
             if(!byId.has(id)) { byId.set(id, d); changed = true; }
         });
+        // migrate images for new natural products to fixed Unsplash URLs if needed
+        const fixed = {
+            1: 'https://images.unsplash.com/photo-1512207856368-1b97f1fcda37?q=80&w=800&auto=format&fit=crop', // shampoo/cosmetics
+            2: 'https://images.unsplash.com/photo-1615634260167-5e8746cfb59d?q=80&w=800&auto=format&fit=crop', // conditioner/cosmetics
+            3: 'https://images.unsplash.com/photo-1523293836414-7b3dc6c8c9a3?q=80&w=800&auto=format&fit=crop', // handmade soap
+            4: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800&auto=format&fit=crop', // hair oil bottle
+            5: 'https://images.unsplash.com/photo-1608571424946-b1e3cfb9bb9b?q=80&w=800&auto=format&fit=crop',
+            6: 'https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?q=80&w=800&auto=format&fit=crop',
+            7: 'https://images.unsplash.com/photo-1585238342028-1e3a76e51f1c?q=80&w=800&auto=format&fit=crop',
+            8: 'https://images.unsplash.com/photo-1611606063065-ee7946f0787a?q=80&w=800&auto=format&fit=crop',
+            9: 'https://images.unsplash.com/photo-1611930022144-b9fd4785e8be?q=80&w=800&auto=format&fit=crop'
+        };
+        for(const [id, p] of byId.entries()){
+            if(fixed[id]){
+                const img = String(p.image||'');
+                if(!img || img.startsWith('https://source.unsplash.com/')){ p.image = fixed[id]; changed = true; }
+            }
+        }
         const merged = Array.from(byId.values());
         if(changed){ try{ localStorage.setItem('pb_products_v1', JSON.stringify(merged)); }catch(e){} }
         appProducts = merged.length ? merged : (products||[]);
+
+        // note: no global override; each product uses its own fixed image URL
     }catch(e){ /* ignore */ }
 }
 function loadStoredStylists(){

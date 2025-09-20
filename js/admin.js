@@ -482,6 +482,32 @@
       if(del){ if(confirm('Eliminar producto?')){ const id = Number(del.dataset.deleteId); let list = loadProducts(); list = list.filter(x=>x.id!==id); saveProducts(list); renderProducts(); } }
     }); }
 
+    // Global delegation as fallback (in case container binding misses)
+    document.addEventListener('click', (e)=>{
+      const btnEdit = e.target.closest && e.target.closest('[data-edit-id]');
+      const btnDel = e.target.closest && e.target.closest('[data-delete-id]');
+      if(btnEdit){
+        const id = Number(btnEdit.getAttribute('data-edit-id'));
+        const list = loadProducts(); const p = list.find(x=> Number(x.id)===id);
+        if(p){
+          const idEl = document.getElementById('prod-id'); if(idEl) idEl.value = p.id;
+          const nm = document.getElementById('prod-name'); if(nm) nm.value = p.name || '';
+          const pr = document.getElementById('prod-price'); if(pr) pr.value = p.price || '';
+          const cat = document.getElementById('prod-category'); if(cat) cat.value = p.category || '';
+          const emo = document.getElementById('prod-emoji'); if(emo) emo.value = p.emoji || '';
+          const img = document.getElementById('prod-image'); if(img) img.value = p.image || '';
+          const prev = document.getElementById('prod-image-preview'); if(prev){ if(p.image){ prev.src=p.image; prev.style.display='inline-block'; } else { prev.style.display='none'; } }
+          const panel = document.getElementById('products-panel'); if(panel && panel.scrollIntoView) panel.scrollIntoView({ behavior:'smooth', block:'start' });
+        }
+      }
+      if(btnDel){
+        const id = Number(btnDel.getAttribute('data-delete-id'));
+        if(confirm('Eliminar producto?')){
+          let list = loadProducts(); list = list.filter(x=> Number(x.id)!==id); saveProducts(list); renderProducts();
+        }
+      }
+    });
+
     // Product image live preview + validation
     setupImagePreview('prod-image', 'prod-image-preview', 'prod-image-error');
     // Product file upload -> resize -> set data URL
