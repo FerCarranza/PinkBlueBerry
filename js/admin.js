@@ -1,7 +1,43 @@
 // admin.js - manage products and reservations using localStorage
 (function(){
+  'use strict';
+  // i18n helper
+  function t(key, fallback){
+    try{ return (window.i18n? i18n.t(key) : (fallback||key)); }
+    catch(e){ return fallback||key; }
+  }
+
+  // Read file -> dataURL resized to maxSize (px)
+  function readImageFileToDataUrl(file, maxSize){
+    maxSize = maxSize || 800;
+    return new Promise((resolve, reject)=>{
+      try{
+        const fr = new FileReader();
+        fr.onerror = ()=> reject(new Error('read_error'));
+        fr.onload = ()=>{
+          const img = new Image();
+          img.onload = ()=>{
+            const w = img.width, h = img.height;
+            let nw = w, nh = h;
+            const scale = Math.max(nw, nh) > maxSize ? (maxSize / Math.max(nw, nh)) : 1;
+            nw = Math.round(nw * scale); nh = Math.round(nh * scale);
+            const canvas = document.createElement('canvas');
+            canvas.width = nw; canvas.height = nh;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, nw, nh);
+            try{ resolve(canvas.toDataURL('image/jpeg', 0.88)); }
+            catch(e){ resolve(fr.result); }
+          };
+          img.onerror = ()=> reject(new Error('image_error'));
+          img.src = fr.result;
+        };
+        fr.readAsDataURL(file);
+      }catch(e){ reject(e); }
+    });
+  }
   const PROD_KEY = 'pb_products_v1';
   const RES_KEY = 'pb_reservations_v1';
+  const STY_KEY = 'pb_stylists_v1';
 
   // Helper: return inline SVG for named icon
   function getIcon(name){
@@ -16,6 +52,117 @@
       case 'arrow-right': return `<svg ${common}><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       default: return '';
     }
+  }
+
+  // Default image helpers (Unsplash Source URLs)
+  function getDefaultProductImage(p){
+    const name = (p && p.name || '').toLowerCase();
+    if(name.includes('champ') || name.includes('shamp')) return 'https://source.unsplash.com/800x800/?shampoo,bottle,cosmetics';
+    if(name.includes('acond') || name.includes('condit')) return 'https://source.unsplash.com/800x800/?conditioner,bottle,cosmetics';
+    if(name.includes('aceite') || name.includes('oil')) return 'https://source.unsplash.com/800x800/?hair,oil,bottle';
+    if(name.includes('jab') || name.includes('soap')) return 'https://source.unsplash.com/800x800/?soap,handmade,organic';
+    return 'https://source.unsplash.com/800x800/?haircare,cosmetics,product';
+  }
+  function getDefaultStylistImage(s){
+    return 'https://source.unsplash.com/800x1000/?hairdresser,portrait,studio';
+  }
+  function ensureDefaultImages(){
+    try{
+      let prods = loadProducts(); let changed=false;
+      prods.forEach(p=>{ if(!p.image){ p.image = getDefaultProductImage(p); changed=true; } });
+      if(changed) saveProducts(prods);
+    }catch(e){}
+    try{
+      let sts = loadStylists(); let changedS=false;
+      sts.forEach(s=>{ if(!s.image){ s.image = getDefaultStylistImage(s); changedS=true; } });
+      if(changedS) saveStylists(sts);
+    }catch(e){}
+  }
+
+  // Loyalty logs rendering
+  let _lpCache = [];
+  let _lpPage = 1;
+  const LP_PER_PAGE = 5;
+  function renderLoyaltyLogs(filters){
+    const root = document.getElementById('lp-results'); if(!root) return;
+    const logs = (window.Loyalty? Loyalty.getLog(filters||{}) : []);
+    _lpCache = logs.slice(); _lpPage = 1;
+    root.innerHTML = '';
+    if(!logs.length){ root.innerHTML = '<div class="muted">No hay registros</div>'; return; }
+    function renderPage(page){
+      root.innerHTML = '';
+      const total = _lpCache.length;
+      const totalPages = Math.max(1, Math.ceil(total / LP_PER_PAGE));
+      _lpPage = Math.min(Math.max(1, page||1), totalPages);
+      const start = (_lpPage-1) * LP_PER_PAGE;
+      const rows = _lpCache.slice(start, start + LP_PER_PAGE);
+
+      const table = document.createElement('table'); table.className = 'res-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Email</th><th>Nombre</th><th>Puntos</th><th>Tipo</th><th>Origen</th><th>Monto</th><th>Orden</th><th>Reserva</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector('tbody');
+      rows.forEach(l=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${l.createdAt}</td>
+          <td>${l.email}</td>
+          <td>${l.name||''}</td>
+          <td>${l.points}</td>
+          <td>${l.type||''}</td>
+          <td>${l.source||''}</td>
+          <td>${l.amount!=null? ('$'+l.amount): ''}</td>
+          <td>${l.orderId||''}</td>
+          <td>${l.reservationId||''}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      // pager
+      const pager = document.createElement('div'); pager.className = 'res-pager';
+      const prev = Math.max(1, _lpPage-1);
+      const next = Math.min(totalPages, _lpPage+1);
+      pager.innerHTML = `
+        <div class="pager-controls">
+          ${iconButton('arrow-left','Anterior', `class=\"btn page-btn\" data-lp-page=\"${prev}\" ${_lpPage<=1? 'disabled':''}`)}
+          <span class="pager-info">Página ${_lpPage} de ${totalPages}</span>
+          ${iconButton('arrow-right','Siguiente', `class=\"btn page-btn\" data-lp-page=\"${next}\" ${_lpPage>=totalPages? 'disabled':''}`)}
+        </div>`;
+
+      root.appendChild(table);
+      root.appendChild(pager);
+    }
+    renderPage(1);
+    // delegate click on pager
+    root.addEventListener('click', (e)=>{
+      const btn = e.target.closest && e.target.closest('[data-lp-page]');
+      if(!btn) return;
+      const p = Number(btn.getAttribute('data-lp-page'))||1;
+      renderPage(p);
+    });
+  }
+  // Image URL validation helper
+  function setupImagePreview(inputId, previewId, errorId){
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    const err = document.getElementById(errorId);
+    if(!input) return;
+    function clear(){ if(preview){ preview.style.display='none'; preview.removeAttribute('src'); } if(err){ err.textContent=''; } }
+    input.addEventListener('input', ()=>{
+      const url = (input.value || '').trim();
+      if(!url){ clear(); return; }
+      try{
+        const img = new Image();
+        img.onload = function(){ if(preview){ preview.src = url; preview.style.display='inline-block'; } if(err){ err.textContent=''; } };
+        img.onerror = function(){ clear(); if(err){ err.textContent = 'URL de imagen inválida'; } };
+        img.src = url;
+      }catch(e){ clear(); if(err){ err.textContent = 'URL de imagen inválida'; } }
+    });
+  }
 
   function bindMobileFiltersToolbar(){
     const toolbar = document.getElementById('filters-toolbar');
@@ -88,7 +235,6 @@
       labelChips();
     });
   }
-  }
 
   // Return HTML for a button with icon and optional text. attrs should be a string of attributes (e.g. 'data-id="1" class="btn"')
   function iconButton(iconName, text, attrs=''){
@@ -102,8 +248,25 @@
   }
   function saveProducts(list){ localStorage.setItem(PROD_KEY, JSON.stringify(list)); }
 
+  function loadStylists(){
+    try{ const raw = localStorage.getItem(STY_KEY); return raw ? JSON.parse(raw) : (window.appStylists || window.stylists || []); }catch(e){ return (window.appStylists || window.stylists || []); }
+  }
+  function saveStylists(list){ localStorage.setItem(STY_KEY, JSON.stringify(list)); }
+
   function loadReservations(){ try{ const raw = localStorage.getItem(RES_KEY); return raw ? JSON.parse(raw) : []; }catch(e){ return []; } }
   function saveReservations(list){ localStorage.setItem(RES_KEY, JSON.stringify(list)); }
+
+  // Safe helpers
+  function ensureArray(key){
+    try{
+      const raw = localStorage.getItem(key);
+      if(!raw){ localStorage.setItem(key, JSON.stringify([])); return []; }
+      const arr = JSON.parse(raw);
+      if(Array.isArray(arr)) return arr;
+      localStorage.setItem(key, JSON.stringify([]));
+      return [];
+    }catch(e){ localStorage.setItem(key, JSON.stringify([])); return []; }
+  }
 
   function renderProducts(){
     const panel = document.getElementById('products-list');
@@ -120,7 +283,8 @@
       const tbody = table.querySelector('tbody');
       list.forEach(p=>{
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${p.id}</td><td><strong>${p.name}</strong><div class="tiny muted">${p.description||''}</div></td><td>${p.category||''}</td><td>$${p.price||0}</td><td>${iconButton('edit', 'Editar', `data-edit-id=\"${p.id}\"`)} ${iconButton('delete', 'Eliminar', `data-delete-id=\"${p.id}\"`)}</td>`;
+        const thumb = p.image ? `<img src="${p.image}" alt="${p.name}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;margin-right:6px;vertical-align:middle;"/>` : '';
+        tr.innerHTML = `<td>${p.id}</td><td>${thumb}<strong>${p.name}</strong><div class="tiny muted">${p.description||''}</div></td><td>${p.category||''}</td><td>$${p.price||0}</td><td>${iconButton('edit', 'Editar', `data-edit-id=\"${p.id}\"`)} ${iconButton('delete', 'Eliminar', `data-delete-id=\"${p.id}\"`)}</td>`;
         tbody.appendChild(tr);
       });
       panel.appendChild(table);
@@ -128,7 +292,35 @@
     }
     list.forEach(p=>{
       const el = document.createElement('div'); el.className='list-item';
-      el.innerHTML = `<div><strong>${p.name}</strong> <span class="muted">${p.category}</span><div class="tiny">${p.description||''}</div></div><div><button class="btn" data-edit-id="${p.id}">Editar</button> <button class="btn" data-delete-id="${p.id}">Eliminar</button></div>`;
+      const thumb = p.image ? `<img src="${p.image}" alt="${p.name}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle;"/>` : '';
+      el.innerHTML = `<div>${thumb}<strong>${p.name}</strong> <span class="muted">${p.category}</span><div class="tiny">${p.description||''}</div></div><div><button class="btn" data-edit-id="${p.id}">Editar</button> <button class="btn" data-delete-id="${p.id}">Eliminar</button></div>`;
+      panel.appendChild(el);
+    });
+  }
+
+  function renderStylistsAdmin(){
+    const panel = document.getElementById('stylists-list');
+    if(!panel) return;
+    const list = loadStylists();
+    panel.innerHTML = '';
+    const isMobile = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+    if(isMobile){
+      const table = document.createElement('table'); table.className = 'res-table';
+      table.innerHTML = `<thead><tr><th>ID</th><th>Nombre</th><th>Título</th><th>Rating</th><th>Acciones</th></tr></thead><tbody></tbody>`;
+      const tbody = table.querySelector('tbody');
+      list.forEach(s=>{
+        const tr = document.createElement('tr');
+        const thumb = s.image ? `<img src="${s.image}" alt="${s.name}" style="width:28px;height:28px;object-fit:cover;border-radius:6px;margin-right:6px;vertical-align:middle;"/>` : '';
+        tr.innerHTML = `<td>${s.id}</td><td>${thumb}<strong>${s.name}</strong></td><td>${s.title||''}</td><td>${s.rating||''}</td><td>${iconButton('edit','Editar',`data-edit-sty=\"${s.id}\"`)} ${iconButton('delete','Eliminar',`data-delete-sty=\"${s.id}\"`)}</td>`;
+        tbody.appendChild(tr);
+      });
+      panel.appendChild(table);
+      return;
+    }
+    list.forEach(s=>{
+      const el = document.createElement('div'); el.className = 'list-item';
+      const thumb = s.image ? `<img src="${s.image}" alt="${s.name}" style="width:32px;height:32px;object-fit:cover;border-radius:6px;margin-right:8px;vertical-align:middle;"/>` : '';
+      el.innerHTML = `<div>${thumb}<strong>${s.name}</strong> <span class="muted">${s.title||''}</span></div><div><button class="btn" data-edit-sty="${s.id}">Editar</button> <button class="btn" data-delete-sty="${s.id}">Eliminar</button></div>`;
       panel.appendChild(el);
     });
   }
@@ -140,7 +332,7 @@
 
   function renderReservations(){
     // legacy entrypoint: render current reservations (unfiltered)
-    const list = loadReservations();
+    const list = ensureArray(RES_KEY) || loadReservations();
     renderReservationsList(list, 1);
   }
 
@@ -170,14 +362,14 @@
           <strong>${r.name}</strong>
           <div class="tiny">${r.serviceName} - ${r.date} ${r.time}</div>
           <div class="muted">${r.email} • ${r.phone}</div>
-          <div class="tiny">Estado de pago: ${r.paid ? '<strong style="color:green">Pagado</strong>' : '<span style="color:#c00">Pendiente</span>'} ${r.upsell? '• Tratamiento Premium':''}</div>
+          <div class="tiny">${t('res_th_paid','Pago')}: ${r.paid ? '<strong style=\"color:green\">'+t('res_paid','Pagado')+'</strong>' : '<span style=\"color:#c00\">'+t('res_pending','Pendiente')+'</span>'} ${r.upsell? '• Tratamiento Premium':''}</div>
         </div>
         <div>
-          ${iconButton('edit', r.paid? 'Editar':'Editar', `data-edit-res=\"${r.id}\"`)}
-          ${iconButton('move', 'Mover', `data-move-res=\"${r.id}\"`)}
-          ${iconButton('pay', r.paid? 'Marcar Pendiente':'Marcar Pagado', `data-toggle-paid=\"${r.id}\"`)}
-          ${iconButton('notify', 'Notificar', `data-notify-res=\"${r.id}\"`)}
-          ${iconButton('delete', 'Eliminar', `data-delete-res=\"${r.id}\"`)}
+          ${iconButton('edit', t('action_edit','Editar'), `data-edit-res=\"${r.id}\"`)}
+          ${iconButton('move', t('action_move','Mover'), `data-move-res=\"${r.id}\"`)}
+          ${iconButton('pay', r.paid? t('action_mark_pending','Marcar Pendiente') : t('action_mark_paid','Marcar Pagado'), `data-toggle-paid=\"${r.id}\"`)}
+          ${iconButton('notify', t('action_notify','Notificar'), `data-notify-res=\"${r.id}\"`)}
+          ${iconButton('delete', t('action_delete','Eliminar'), `data-delete-res=\"${r.id}\"`)}
         </div>
       `;
       panel.appendChild(el);
@@ -196,15 +388,15 @@
     table.innerHTML = `
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Servicio</th>
-          <th>Estilista</th>
-          <th>Fecha</th>
-          <th>Hora</th>
-          <th>Importe</th>
-          <th>Pago</th>
-          <th>Acciones</th>
+          <th>${t('res_th_id','ID')}</th>
+          <th>${t('res_th_name','Nombre')}</th>
+          <th>${t('res_th_service','Servicio')}</th>
+          <th>${t('res_th_stylist','Estilista')}</th>
+          <th>${t('res_th_date','Fecha')}</th>
+          <th>${t('res_th_time','Hora')}</th>
+          <th>${t('res_th_amount','Importe')}</th>
+          <th>${t('res_th_paid','Pago')}</th>
+          <th>${t('res_th_actions','Acciones')}</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -220,11 +412,11 @@
         <td>${r.date || ''}</td>
         <td>${r.time || ''}</td>
         <td>$${r.amount || 0}</td>
-        <td>${r.paid? '<span style="color:green">Pagado</span>':'<span style="color:#c00">Pendiente</span>'}</td>
+        <td>${r.paid? '<span style="color:green">'+t('res_paid','Pagado')+'</span>':'<span style="color:#c00">'+t('res_pending','Pendiente')+'</span>'}</td>
         <td class="actions">
-          ${iconButton('edit', 'Editar', `data-edit-res=\"${r.id}\"`)}
-          ${iconButton('pay', r.paid? 'Marcar Pendiente':'Marcar Pagado', `data-toggle-paid=\"${r.id}\"`)}
-          ${iconButton('delete', 'Eliminar', `data-delete-res=\"${r.id}\"`)}
+          ${iconButton('edit', t('action_edit','Editar'), `data-edit-res=\"${r.id}\"`)}
+          ${iconButton('pay', r.paid? t('action_mark_pending','Marcar Pendiente'): t('action_mark_paid','Marcar Pagado'), `data-toggle-paid=\"${r.id}\"`)}
+          ${iconButton('delete', t('action_delete','Eliminar'), `data-delete-res=\"${r.id}\"`)}
         </td>
       `;
       tbody.appendChild(tr);
@@ -255,85 +447,156 @@
   }
 
   function bind(){
-    document.getElementById('prod-save').addEventListener('click', ()=>{
+    // Save product
+    const prodSave = document.getElementById('prod-save');
+    if(prodSave){ prodSave.addEventListener('click', ()=>{
       const idField = document.getElementById('prod-id');
       const name = document.getElementById('prod-name').value.trim();
       const price = Number(document.getElementById('prod-price').value || 0);
       const category = document.getElementById('prod-category').value.trim();
       const emoji = document.getElementById('prod-emoji').value.trim();
+      const image = document.getElementById('prod-image').value.trim();
       if(!name){ alert('Nombre requerido'); return; }
       const list = loadProducts();
       if(idField.value){ // edit
         const id = Number(idField.value);
         const idx = list.findIndex(p=>p.id===id);
-        if(idx>=0){ list[idx] = { ...list[idx], name, price, category, emoji }; }
+        if(idx>=0){ list[idx] = { ...list[idx], name, price, category, emoji, image }; }
       } else { // create new
         const id = list.length ? Math.max(...list.map(p=>p.id))+1 : 1;
-        list.push({ id, name, price, category, emoji });
+        list.push({ id, name, price, category, emoji, image });
       }
       saveProducts(list); renderProducts(); clearForm();
       alert('Producto guardado');
-    });
+    }); }
 
-    document.getElementById('prod-clear').addEventListener('click', ()=>{ clearForm(); });
-    document.getElementById('products-list').addEventListener('click', (e)=>{
+    // Clear product form
+    const prodClear = document.getElementById('prod-clear'); if(prodClear){ prodClear.addEventListener('click', ()=>{ clearForm(); }); }
+
+    // Product list actions
+    const prodList = document.getElementById('products-list');
+    if(prodList){ prodList.addEventListener('click', (e)=>{
       const edit = e.target.closest('[data-edit-id]');
       const del = e.target.closest('[data-delete-id]');
-      if(edit){ const id = Number(edit.dataset.editId); const list = loadProducts(); const p = list.find(x=>x.id===id); if(p){ document.getElementById('prod-id').value = p.id; document.getElementById('prod-name').value = p.name; document.getElementById('prod-price').value = p.price; document.getElementById('prod-category').value = p.category; document.getElementById('prod-emoji').value = p.emoji; } }
+      if(edit){ const id = Number(edit.dataset.editId); const list = loadProducts(); const p = list.find(x=>x.id===id); if(p){ document.getElementById('prod-id').value = p.id; document.getElementById('prod-name').value = p.name; document.getElementById('prod-price').value = p.price; document.getElementById('prod-category').value = p.category; document.getElementById('prod-emoji').value = p.emoji; document.getElementById('prod-image').value = p.image || ''; const prev = document.getElementById('prod-image-preview'); if(prev){ if(p.image){ prev.src = p.image; prev.style.display='inline-block'; } else { prev.style.display='none'; } } } }
       if(del){ if(confirm('Eliminar producto?')){ const id = Number(del.dataset.deleteId); let list = loadProducts(); list = list.filter(x=>x.id!==id); saveProducts(list); renderProducts(); } }
-    });
+    }); }
 
-    document.getElementById('reservations-list').addEventListener('click', (e)=>{
+    // Product image live preview + validation
+    setupImagePreview('prod-image', 'prod-image-preview', 'prod-image-error');
+    // Product file upload -> resize -> set data URL
+    const prodFile = document.getElementById('prod-image-file');
+    if(prodFile){
+      prodFile.addEventListener('change', async ()=>{
+        const file = prodFile.files && prodFile.files[0]; if(!file) return;
+        try{
+          const dataUrl = await readImageFileToDataUrl(file, 800);
+          const urlInput = document.getElementById('prod-image'); const prev = document.getElementById('prod-image-preview');
+          if(urlInput){ urlInput.value = dataUrl; }
+          if(prev){ prev.src = dataUrl; prev.style.display = 'inline-block'; }
+          const err = document.getElementById('prod-image-error'); if(err) err.textContent = '';
+        }catch(e){ const err = document.getElementById('prod-image-error'); if(err) err.textContent = 'No se pudo procesar la imagen'; }
+      });
+    }
+
+    // Reservations list actions (pagination, edit, move, toggle paid, notify, delete)
+    const resList = document.getElementById('reservations-list');
+    if(resList){ resList.addEventListener('click', (e)=>{
       const del = e.target.closest('[data-delete-res]');
       const edit = e.target.closest('[data-edit-res]');
       const move = e.target.closest('[data-move-res]');
       const togglePaid = e.target.closest('[data-toggle-paid]');
       const notify = e.target.closest('[data-notify-res]');
 
-        if(edit){
-          const id = edit.dataset.editRes;
-          openEditReservation(id);
-          return;
-        }
+      if(edit){ const id = edit.dataset.editRes; openEditReservation(id); return; }
 
-        const pageBtn = e.target.closest('.page-btn') || e.target.closest('[data-page]');
-        if(pageBtn){
-          const targetPage = Number(pageBtn.dataset.page) || 1;
-          // re-render using cached list and target page
-          renderReservationsList(_reservationsCache || loadReservations(), targetPage);
-          return;
-        }
+      const pageBtn = e.target.closest('.page-btn') || e.target.closest('[data-page]');
+      if(pageBtn){ const targetPage = Number(pageBtn.dataset.page) || 1; renderReservationsList(_reservationsCache || loadReservations(), targetPage); return; }
 
-      if(move){
-        const id = move.dataset.moveRes;
-        openMoveReservation(id);
-        return;
+      if(move){ const id = move.dataset.moveRes; openMoveReservation(id); return; }
+      if(togglePaid){ const id = togglePaid.dataset.togglePaid; toggleReservationPaid(id); return; }
+      if(notify){ const id = notify.dataset.notifyRes; sendNotificationForReservation(id); return; }
+      if(del){ if(confirm('Eliminar reserva?')){ const id = del.dataset.deleteRes; let list = loadReservations(); list = list.filter(x=>String(x.id)!==String(id)); saveReservations(list); _reservationsCache = loadReservations(); refreshReservationsCurrentPage(); } }
+    }); }
+
+    // Clear all reservations
+    const resClear = document.getElementById('reservations-clear'); if(resClear){ resClear.addEventListener('click', ()=>{ if(confirm('Limpiar todas las reservas?')){ saveReservations([]); renderReservations(); } }); }
+
+    // Stylists list actions
+    const styList = document.getElementById('stylists-list');
+    if(styList){
+      styList.addEventListener('click', (e)=>{
+        const edit = e.target.closest('[data-edit-sty]');
+        const del = e.target.closest('[data-delete-sty]');
+        if(edit){ const id = Number(edit.dataset.editSty); const list = loadStylists(); const s = list.find(x=>x.id===id); if(s){ document.getElementById('sty-id').value = s.id; document.getElementById('sty-name').value = s.name || ''; document.getElementById('sty-title').value = s.title || ''; document.getElementById('sty-rating').value = s.rating || ''; document.getElementById('sty-emoji').value = s.emoji || ''; document.getElementById('sty-specialties').value = Array.isArray(s.specialties)? s.specialties.join(', ') : ''; const prev = document.getElementById('sty-image-preview'); const urlInput = document.getElementById('sty-image'); if(prev){ const url = (s.image||'').trim(); if(url){ prev.src = url; prev.style.display='inline-block'; } else { prev.style.display='none'; } } if(urlInput){ urlInput.value = s.image || ''; } } }
+        if(del){ if(confirm('Eliminar estilista?')){ let list = loadStylists(); list = list.filter(x=>Number(x.id)!==Number(del.dataset.deleteSty)); saveStylists(list); renderStylistsAdmin(); } }
+      });
+    }
+
+    // Loyalty logs filters
+    const lpApply = document.getElementById('lp-apply');
+    const lpClear = document.getElementById('lp-clear');
+    const lpExport = document.getElementById('lp-export');
+    const fEmail = document.getElementById('lp-email');
+    const fType = document.getElementById('lp-type');
+    const fSource = document.getElementById('lp-source');
+    const fFrom = document.getElementById('lp-from');
+    const fTo = document.getElementById('lp-to');
+    function getFilters(){
+      return {
+        email: (fEmail&&fEmail.value)||'',
+        type: (fType&&fType.value)||'',
+        source: (fSource&&fSource.value)||'',
+        from: (fFrom&&fFrom.value)||'',
+        to: (fTo&&fTo.value)||''
+      };
+    }
+    function applyLogs(){ renderLoyaltyLogs(getFilters()); }
+    if(lpApply){ lpApply.addEventListener('click', applyLogs); }
+    if(lpClear){ lpClear.addEventListener('click', ()=>{ if(fEmail) fEmail.value=''; if(fType) fType.value=''; if(fSource) fSource.value=''; if(fFrom) fFrom.value=''; if(fTo) fTo.value=''; renderLoyaltyLogs({}); }); }
+    if(lpExport){ lpExport.addEventListener('click', ()=>{
+      const logs = (window.Loyalty? Loyalty.getLog(getFilters()) : []);
+      if(!logs.length){ alert('No hay registros para exportar'); return; }
+      const rows = [['createdAt','email','name','points','type','source','amount','orderId','reservationId']];
+      logs.forEach(l=> rows.push([l.createdAt,l.email,l.name,l.points,l.type,l.source,l.amount,l.orderId,l.reservationId]));
+      const csv = rows.map(r=> r.map(c=> '"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download='loyalty_logs.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }); }
+    // initial render
+    renderLoyaltyLogs({});
+
+    // Stylist save/clear
+    const stySave = document.getElementById('sty-save');
+    if(stySave){ stySave.addEventListener('click', ()=>{
+      const idField = document.getElementById('sty-id');
+      const name = document.getElementById('sty-name').value.trim();
+      const title = document.getElementById('sty-title').value.trim();
+      const rating = Number(document.getElementById('sty-rating').value || 0);
+      const emoji = document.getElementById('sty-emoji').value.trim();
+      const specs = document.getElementById('sty-specialties').value.trim();
+      const image = document.getElementById('sty-image').value.trim();
+      if(!name){ alert('Nombre requerido'); return; }
+      let list = loadStylists();
+      if(idField.value){
+        const id = Number(idField.value);
+        const idx = list.findIndex(s=>s.id===id);
+        if(idx>=0){ list[idx] = { ...list[idx], name, title, rating, emoji, specialties: specs? specs.split(',').map(s=>s.trim()).filter(Boolean) : [], image }; }
+      } else {
+        const id = list.length ? Math.max(...list.map(s=>s.id))+1 : 1;
+        list.push({ id, name, title, rating, emoji, specialties: specs? specs.split(',').map(s=>s.trim()).filter(Boolean) : [], image });
       }
-
-      if(togglePaid){
-        const id = togglePaid.dataset.togglePaid;
-        toggleReservationPaid(id);
-        return;
-      }
-
-      if(notify){
-        const id = notify.dataset.notifyRes;
-        sendNotificationForReservation(id);
-        return;
-      }
-
-      if(del){ if(confirm('Eliminar reserva?')){ const id = del.dataset.deleteRes; let list = loadReservations(); list = list.filter(x=>String(x.id)!==String(id)); saveReservations(list); // refresh and keep page
-        // update cache and refresh
-        _reservationsCache = loadReservations(); refreshReservationsCurrentPage();
-       } }
-    });
-
-    document.getElementById('reservations-clear').addEventListener('click', ()=>{
-      if(confirm('Limpiar todas las reservas?')){ saveReservations([]); renderReservations(); }
-    });
+      saveStylists(list); renderStylistsAdmin(); clearStylistForm(); alert('Estilista guardado');
+    }); }
+    const styClear = document.getElementById('sty-clear'); if(styClear){ styClear.addEventListener('click', ()=> clearStylistForm()); }
+    // Stylist image live preview + validation
+    setupImagePreview('sty-image', 'sty-image-preview', 'sty-image-error');
   }
 
-  function clearForm(){ document.getElementById('prod-id').value=''; document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; document.getElementById('prod-category').value=''; document.getElementById('prod-emoji').value=''; }
+  function clearForm(){ document.getElementById('prod-id').value=''; document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; document.getElementById('prod-category').value=''; document.getElementById('prod-emoji').value=''; const img = document.getElementById('prod-image'); if(img) img.value=''; const prev = document.getElementById('prod-image-preview'); if(prev) prev.style.display='none'; }
+
+  function clearStylistForm(){ const ids=['sty-id','sty-name','sty-title','sty-rating','sty-emoji','sty-specialties','sty-image']; ids.forEach(id=>{ const el=document.getElementById(id); if(!el) return; if(el.tagName==='INPUT') el.value=''; }); const prev = document.getElementById('sty-image-preview'); if(prev) prev.style.display='none'; }
 
   // Reservation helpers
   function findReservation(id){ const list = loadReservations(); return list.find(x=>String(x.id)===String(id)); }
@@ -483,31 +746,7 @@
     renderReservationsList(list);
   }
 
-  function renderReservationsList(list){
-    const panel = document.getElementById('reservations-list');
-    panel.innerHTML = '';
-    if(list.length===0) panel.innerHTML = '<div class="muted">No hay reservas</div>';
-    list.sort((a,b)=>{ if(!a.date && !b.date) return 0; if(!a.date) return 1; if(!b.date) return -1; return new Date(a.date + ' ' + (a.time||'00:00')) - new Date(b.date + ' ' + (b.time||'00:00')); });
-    list.forEach(r=>{
-      const el = document.createElement('div'); el.className='list-item';
-      el.innerHTML = `
-        <div>
-          <strong>${r.name}</strong>
-          <div class="tiny">${r.serviceName} - ${r.date} ${r.time}</div>
-          <div class="muted">${r.email} • ${r.phone}</div>
-          <div class="tiny">Estado de pago: ${r.paid ? '<strong style="color:green">Pagado</strong>' : '<span style="color:#c00">Pendiente</span>'} ${r.upsell? '• Tratamiento Premium':''}</div>
-        </div>
-        <div>
-          <button class="btn" data-edit-res="${r.id}">Editar</button>
-          <button class="btn" data-move-res="${r.id}">Mover</button>
-          <button class="btn" data-toggle-paid="${r.id}">${r.paid? 'Marcar Pendiente':'Marcar Pagado'}</button>
-          <button class="btn" data-notify-res="${r.id}">Notificar</button>
-          <button class="btn" data-delete-res="${r.id}">Eliminar</button>
-        </div>
-      `;
-      panel.appendChild(el);
-    });
-  }
+  
 
   function exportCSV(){
     const list = loadReservations();
@@ -581,24 +820,44 @@
       }
       try{ localStorage.setItem(STORE_KEY, JSON.stringify({ collapsed })); }catch(e){}
     }
-    // collapse by default on small screens
     function isSmall(){ return window.matchMedia && window.matchMedia('(max-width: 900px)').matches; }
-    // load preference if exists
-    let pref = null; try{ const raw = localStorage.getItem(STORE_KEY); if(raw){ const obj = JSON.parse(raw); pref = (typeof obj.collapsed === 'boolean') ? obj.collapsed : null; } }catch(e){}
+    let pref = null;
+    try{
+      const raw = localStorage.getItem(STORE_KEY);
+      if(raw){ const obj = JSON.parse(raw); pref = (typeof obj.collapsed === 'boolean') ? obj.collapsed : null; }
+    }catch(e){}
     if(pref === null){ setCollapsed(isSmall()); } else { setCollapsed(pref); }
-    btn.addEventListener('click', ()=>{ const expanded = btn.getAttribute('aria-expanded')==='true'; setCollapsed(expanded); });
+    btn.addEventListener('click', ()=>{
+      const expanded = btn.getAttribute('aria-expanded')==='true';
+      setCollapsed(expanded);
+    });
     window.addEventListener('resize', ()=>{ if(pref===null){ setCollapsed(isSmall()); } });
   }
 
   // On load
-  document.addEventListener('DOMContentLoaded', ()=>{
-    renderProducts(); renderReservations(); bind();
-    populateFilterControls(); bindModalActions(); bindFilterActions(); bindFiltersToggle(); bindMobileFiltersToolbar();
+  document.addEventListener('DOMContentLoaded', function(){
+    // assign default images if missing
+    ensureDefaultImages();
+    renderProducts();
+    renderReservations();
+    renderStylistsAdmin();
+    bind();
+    populateFilterControls();
+    bindModalActions();
+    bindFilterActions();
+    bindFiltersToggle();
+    bindMobileFiltersToolbar();
   });
 
   // Expose helper for other scripts: allow saving reservations
   window.AdminAPI = {
-    saveReservation: function(res){ const list = loadReservations(); list.push(res); saveReservations(list); }
+    saveReservation: function(res){
+      const list = ensureArray(RES_KEY);
+      list.push(res);
+      saveReservations(list);
+      // refresh list while keeping page
+      _reservationsCache = list.slice();
+      refreshReservationsCurrentPage();
+    }
   };
 })();
-

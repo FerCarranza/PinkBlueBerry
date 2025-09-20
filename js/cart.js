@@ -57,7 +57,7 @@ const Cart = (function(){
     if(countEl){ countEl.textContent = items.reduce((s,i)=>s+i.quantity,0); }
     if(listEl){
       listEl.innerHTML = '';
-      if(items.length===0){ listEl.innerHTML = '<li class="muted">Tu carrito está vacío</li>'; }
+      if(items.length===0){ listEl.innerHTML = `<li class="muted">${(window.i18n? i18n.t('cart_empty') : 'Tu carrito está vacío')}</li>`; }
       items.forEach(it=>{
         const li = document.createElement('li'); li.className = 'cart-row';
         li.innerHTML = `
@@ -78,6 +78,31 @@ const Cart = (function(){
     if(subtotalEl) subtotalEl.textContent = getSubtotal().toFixed(2);
     if(taxesEl) taxesEl.textContent = getTaxes().toFixed(2);
     if(totalEl) totalEl.textContent = getTotal().toFixed(2);
+    // set summary labels if present
+    const container = document.querySelector('.cart-summary');
+    if(container && window.i18n){
+      const labels = container.querySelectorAll('.label');
+      if(labels[0]) labels[0].textContent = i18n.t('cart_subtotal');
+      if(labels[1]) labels[1].textContent = i18n.t('cart_taxes');
+      const totalLabel = container.querySelector('.total .label');
+      if(totalLabel) totalLabel.textContent = i18n.t('cart_total');
+    }
+    // show points estimate
+    try{
+      const est = (window.Loyalty? Loyalty.estimatePoints(getTotal()) : 0);
+      let hint = document.getElementById('cart-points-estimate');
+      if(!hint){
+        hint = document.createElement('div');
+        hint.id = 'cart-points-estimate';
+        hint.style.cssText = 'margin-top:8px;color:#0f172a;font-weight:600;';
+        const cf = document.querySelector('.cart-footer');
+        if(cf) cf.insertBefore(hint, cf.firstChild);
+      }
+      if(hint){
+        const msg = (window.i18n? (est>0? `+ ${est} pts` : '') : (est>0? `+ ${est} pts` : ''));
+        hint.textContent = msg;
+      }
+    }catch(e){}
   }
 
   function beginCheckout(){
@@ -106,8 +131,20 @@ const Cart = (function(){
       status: 'paid'
     };
     try{ const raw = localStorage.getItem(ORDERS_KEY); const list = raw? JSON.parse(raw):[]; list.push(order); localStorage.setItem(ORDERS_KEY, JSON.stringify(list)); }catch(e){}
+    // Loyalty integration
+    try{
+      const email = (document.getElementById('cp-email')||{}).value || '';
+      const name = (document.getElementById('cp-name')||{}).value || '';
+      const total = getTotal();
+      const pts = (window.Loyalty? Loyalty.estimatePoints(total) : 0);
+      if(email && pts>0 && window.Loyalty){ Loyalty.addPoints(email, name, pts); }
+      else if(!email && pts>0 && window.showNotification){
+        const invite = (window.i18n? 'Para acumular puntos, ingresa tu email y únete como miembro.' : 'Enter your email to earn loyalty points!');
+        showNotification(invite);
+      }
+    }catch(e){}
     clear(); cancelCheckout(); close();
-    if(window.showNotification) showNotification('Pago realizado. ¡Gracias por tu compra!');
+    if(window.showNotification) showNotification((window.i18n? i18n.t('cart_paid_thanks') : 'Pago realizado. ¡Gracias por tu compra!'));
   }
 
   // Public API
@@ -136,7 +173,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
     // esc to close
     document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && panel.classList.contains('open')) Cart.close(); });
   }
-  const checkoutBtn = document.getElementById('checkout-btn'); if(checkoutBtn){ checkoutBtn.addEventListener('click', ()=> Cart.beginCheckout()); }
+  const checkoutBtn = document.getElementById('checkout-btn'); if(checkoutBtn){ if(window.i18n){ checkoutBtn.textContent = i18n.t('cart_pay_now'); } checkoutBtn.addEventListener('click', ()=> Cart.beginCheckout()); }
   const cpCancel = document.getElementById('cp-cancel'); if(cpCancel){ cpCancel.addEventListener('click', ()=> Cart.cancelCheckout()); }
   const cpClose = document.getElementById('cp-close'); if(cpClose){ cpClose.addEventListener('click', ()=> Cart.cancelCheckout()); }
   const cpSubmit = document.getElementById('cp-submit'); if(cpSubmit){ cpSubmit.addEventListener('click', ()=> Cart.submitCheckout()); }

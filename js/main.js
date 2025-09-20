@@ -1,15 +1,33 @@
 // allow admin-saved products to override default list
 let appProducts = products;
+let appStylists = stylists;
 function loadStoredProducts(){
     try{
         const raw = localStorage.getItem('pb_products_v1');
-        if(raw){ appProducts = JSON.parse(raw); }
+        const stored = raw ? JSON.parse(raw) : [];
+        // Merge defaults from data.js (products) into stored by id
+        const byId = new Map(stored.map(p=> [Number(p.id), p]));
+        let changed = false;
+        (products||[]).forEach(d=>{
+            const id = Number(d.id);
+            if(!byId.has(id)) { byId.set(id, d); changed = true; }
+        });
+        const merged = Array.from(byId.values());
+        if(changed){ try{ localStorage.setItem('pb_products_v1', JSON.stringify(merged)); }catch(e){} }
+        appProducts = merged.length ? merged : (products||[]);
+    }catch(e){ /* ignore */ }
+}
+function loadStoredStylists(){
+    try{
+        const raw = localStorage.getItem('pb_stylists_v1');
+        if(raw){ appStylists = JSON.parse(raw); }
     }catch(e){ /* ignore */ }
 }
 
 // Cuando la página carga
 document.addEventListener('DOMContentLoaded', function() {
     loadStoredProducts();
+    loadStoredStylists();
     renderServices();
     renderProducts();
     renderStylists();
@@ -44,12 +62,12 @@ function renderStylists(){
         const grid = document.getElementById('stylists-grid');
         if(!grid) return;
         grid.innerHTML = '';
-        stylists.forEach(s=>{
+        (appStylists || stylists).forEach(s=>{
             const card = document.createElement('div');
             card.className = 'stylist-card card';
             card.dataset.id = s.id;
             card.innerHTML = `
-                <div class="stylist-emoji">${s.emoji}</div>
+                ${s.image ? `<img src="${s.image}" alt="${s.name}" style="width:100%;height:160px;object-fit:cover;border-radius:12px;"/>` : `<div class=\"stylist-emoji\">${s.emoji}</div>`}
                 <h3>${s.name}</h3>
                 <p>${s.title}</p>
                 <p>⭐ ${s.rating}</p>
@@ -67,12 +85,30 @@ function renderProducts(filter = 'all') {
     const productsGrid = document.getElementById('products-grid');
     productsGrid.innerHTML = '';
     const filteredProducts = filter === 'all' ? appProducts : appProducts.filter(p => p.category === filter);
-    filteredProducts.forEach(product => {
+    // Priorizar categorías naturales/visuales
+    function catPriority(cat){
+        const c = String(cat||'').toLowerCase();
+        if(c.includes('tónico') || c.includes('tonico') || c.includes('tonic') || c.includes('natural')) return 0;
+        if(c.includes('tratamientos')) return 1;
+        if(c.includes('jabones')) return 2;
+        if(c.includes('cuidado capilar')) return 3;
+        return 4;
+    }
+    const sorted = filteredProducts.slice().sort((a,b)=>{
+        const pa = catPriority(a.category), pb = catPriority(b.category);
+        if(pa!==pb) return pa-pb;
+        return String(a.name||'').localeCompare(String(b.name||''));
+    });
+    sorted.forEach(product => {
         const card = document.createElement('div');
         card.className = 'product-card card';
+        const cat = String(product.category||'');
+        const isNat = /natural|org[aá]nic|jabones|tratamientos/i.test(cat);
+        const badge = isNat ? `<span style="display:inline-block;background:linear-gradient(90deg,#ec4899,#3b82f6);color:#fff;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700;">${cat}</span>` : '';
         card.innerHTML = `
-            <div class="product-image">${product.emoji}</div>
+            <div class="product-image">${product.image ? `<img src="${product.image}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;"/>` : product.emoji}</div>
             <div class="product-info">
+                ${badge}
                 <h3>${product.name}</h3>
                 <p class="product-price">$${product.price}</p>
                 <p>${product.description}</p>

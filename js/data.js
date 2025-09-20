@@ -6,15 +6,21 @@ const services = [
 ];
 
 const stylists = [
-  { id: 1, name: 'Ana López', title: 'Color Specialist', rating: 4.9, specialties: ['Color', 'Balayage'], emoji: '💇‍♀️' },
-  { id: 2, name: 'María Ruiz', title: 'Senior Stylist', rating: 4.8, specialties: ['Cortes', 'Peinados'], emoji: '✂️' }
+  { id: 1, name: 'Ana López', title: 'Color Specialist', rating: 4.9, specialties: ['Color', 'Balayage'], emoji: '💇‍♀️', image: '' },
+  { id: 2, name: 'María Ruiz', title: 'Senior Stylist', rating: 4.8, specialties: ['Cortes', 'Peinados'], emoji: '✂️', image: '' }
 ];
 
 const products = [
-  { id: 1, name: 'Champú Nutritivo', price: 28, category: 'Cuidado Capilar', description: 'Limpieza suave con ingredientes naturales', emoji: '🧴' },
-  { id: 2, name: 'Acondicionador Reparable', price: 32, category: 'Cuidado Capilar', description: 'Suaviza y repara puntas abiertas', emoji: '🧴' },
-  { id: 3, name: 'Jabón Orgánico', price: 12, category: 'Jabones Orgánicos', description: 'Jabón artesanal con aromas naturales', emoji: '🫧' },
-  { id: 4, name: 'Aceite Capilar', price: 24, category: 'Cuidado Capilar', description: 'Tratamiento ligero para brillo', emoji: '🌿' }
+  { id: 1, name: 'Champú Nutritivo', price: 28, category: 'Cuidado Capilar', description: 'Limpieza suave con ingredientes naturales', emoji: '🧴', image: '' },
+  { id: 2, name: 'Acondicionador Reparable', price: 32, category: 'Cuidado Capilar', description: 'Suaviza y repara puntas abiertas', emoji: '🧴', image: '' },
+  { id: 3, name: 'Jabón Orgánico', price: 12, category: 'Jabones Orgánicos', description: 'Jabón artesanal con aromas naturales', emoji: '🫧', image: '' },
+  { id: 4, name: 'Aceite Capilar', price: 24, category: 'Cuidado Capilar', description: 'Tratamiento ligero para brillo', emoji: '🌿', image: '' },
+  // Nuevos productos naturales con imágenes
+  { id: 5, name: 'Shampoo Natural Romero & Sábila', price: 29, category: 'Cuidado Capilar', description: 'Fortalece y ayuda a la caída; limpia cuero cabelludo graso o seco.', emoji: '🌿', image: 'https://source.unsplash.com/800x800/?shampoo,rosemary,aloe,cosmetics' },
+  { id: 6, name: 'Aceite Capilar de Argán', price: 34, category: 'Cuidado Capilar', description: 'Nutre, repara puntas abiertas y aporta brillo instantáneo.', emoji: '✨', image: 'https://source.unsplash.com/800x800/?argan,oil,bottle,hair' },
+  { id: 7, name: 'Jabón Artesanal de Avena y Miel', price: 14, category: 'Jabones Orgánicos', description: 'Calma e hidrata la piel con ingredientes suaves y naturales.', emoji: '🧼', image: 'https://source.unsplash.com/800x800/?soap,handmade,oat,honey' },
+  { id: 8, name: 'Mascarilla Capilar de Arcilla Verde', price: 22, category: 'Tratamientos', description: 'Detox + hidratación profunda para cabello y cuero cabelludo.', emoji: '🫙', image: 'https://source.unsplash.com/800x800/?clay,mask,green,cosmetics' },
+  { id: 9, name: 'Tónico Capilar de Romero', price: 19, category: 'Tónicos Naturales', description: 'Estimula el crecimiento y equilibra el cuero cabelludo.', emoji: '💧', image: 'https://source.unsplash.com/800x800/?toner,botanical,rosemary,bottle' }
 ];
 
 // Estado de reserva compartido con booking.js

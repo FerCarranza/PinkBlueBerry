@@ -15,24 +15,28 @@
   <nav class="navbar admin-header">
     <div class="container">
       <div class="brand-row">
-        <img src="Spanish/Copy of pink_blueberry_luxury_logo_5.png" srcset="Spanish/Copy of pink_blueberry_luxury_logo_5.png 1x" alt="Pink Blueberry Logo" class="logo-img">
+        <img src="Spanish/Copy of pink_blueberry_luxury_logo_5.png" alt="Pink Blueberry Logo" class="logo-img">
         <h1 class="logo">The Pink Blueberry</h1>
       </div>
       <ul class="nav-links">
-        <li><a href="index.html">Ver sitio</a></li>
-        <li><a href="admin-login.html">Logout</a></li>
+        <li><a href="index.html" data-i18n="admin_view_site">Ver sitio</a></li>
+        <li><a href="admin-login.html" data-i18n="admin_logout">Logout</a></li>
       </ul>
       <div class="nav-actions">
         <div class="cart-icon" aria-hidden="true">🛒</div>
         <button id="hamburger" class="hamburger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+        <select class="lang-select" aria-label="Language">
+          <option value="es">ES</option>
+          <option value="en">EN</option>
+        </select>
       </div>
     </div>
   </nav>
 
   <section class="hero admin-hero">
     <div class="container">
-      <h2 class="hero-title">Panel de Administración</h2>
-      <p class="hero-subtitle">Administrar productos de la tienda y ver reservas</p>
+      <h2 class="hero-title" data-i18n="admin_panel">Panel de Administración</h2>
+      <p class="hero-subtitle" data-i18n="admin_subtitle">Administrar productos de la tienda y ver reservas</p>
     </div>
   </section>
 
@@ -41,24 +45,24 @@
     <button id="filters-toggle" class="filters-toggle" aria-expanded="true" aria-controls="filters-container">Ocultar filtros</button>
     <!-- Toolbar de filtros (modo móvil tipo chips) -->
     <div class="filters-toolbar" id="filters-toolbar" aria-label="Filtros rápidos">
-      <button class="chip" data-filter="stylist">Estilista</button>
-      <button class="chip" data-filter="status">Estado</button>
-      <button class="chip" data-filter="date">Fecha</button>
-      <button class="chip" data-filter="search">Buscar</button>
-      <button class="chip" data-filter="clear">Limpiar</button>
+      <button class="chip" data-filter="stylist" data-i18n="filter_stylist">Estilista</button>
+      <button class="chip" data-filter="status" data-i18n="filter_status">Estado</button>
+      <button class="chip" data-filter="date" data-i18n="filter_date">Fecha</button>
+      <button class="chip" data-filter="search" data-i18n="filter_search">Buscar</button>
+      <button class="chip" data-filter="clear" data-i18n="filter_clear">Limpiar</button>
     </div>
     <div id="filters-container" class="sidebar-inner container">
       <div class="sidebar-section">
-        <h4>Filtros</h4>
+        <h4 data-i18n="filters_title">Filtros</h4>
         <select id="filter-stylist"><option value="">Todos los estilistas</option></select>
         <select id="filter-status"><option value="all">Todos</option><option value="paid">Pagadas</option><option value="pending">Pendientes</option></select>
-        <label>Desde <input type="date" id="filter-date-from" /></label>
-        <label>Hasta <input type="date" id="filter-date-to" /></label>
-        <input id="filter-search" placeholder="Buscar por nombre o email" />
+        <label><span data-i18n="from_label">Desde</span> <input type="date" id="filter-date-from" /></label>
+        <label><span data-i18n="to_label">Hasta</span> <input type="date" id="filter-date-to" /></label>
+        <input id="filter-search" placeholder="Buscar por nombre o email" data-i18n-placeholder="filter_search" />
         <div class="sidebar-actions">
-          <button id="filter-apply" class="btn">Aplicar</button>
-          <button id="filter-clear" class="btn">Limpiar</button>
-          <button id="export-csv" class="btn">Exportar CSV</button>
+          <button id="filter-apply" class="btn" data-i18n="apply_label">Aplicar</button>
+          <button id="filter-clear" class="btn" data-i18n="filter_clear">Limpiar</button>
+          <button id="export-csv" class="btn" data-i18n="export_csv">Exportar CSV</button>
         </div>
         <label class="sidebar-toggle"><input type="checkbox" id="toggle-petals"> Activar animación pétalos</label>
       </div>
@@ -72,6 +76,21 @@
           <button id="admin-change-pass" class="btn">Cambiar contraseña</button>
         </div>
       </div>
+
+      <div class="sidebar-section">
+        <h4 data-i18n="loyalty_title">Lealtad</h4>
+        <div class="form-group">
+          <label><span data-i18n="loyalty_rate_label">Puntos por $1</span></label>
+          <input id="loyalty-rate" type="number" min="0" step="0.1" placeholder="1.0" />
+          <button id="loyalty-save" class="btn" data-i18n="loyalty_save">Guardar tasa</button>
+        </div>
+        <div class="form-group">
+          <label data-i18n="loyalty_query_label">Consultar puntos por email</label>
+          <input id="loyalty-email" type="email" placeholder="email@example.com" />
+          <button id="loyalty-query" class="btn" data-i18n="loyalty_query_btn">Consultar</button>
+          <div id="loyalty-result" class="tiny" style="margin-top:6px;color:var(--text-light)"></div>
+        </div>
+      </div>
     </div>
   </aside>
 
@@ -79,13 +98,13 @@
   <div id="mobile-filter-popover" class="filter-popover" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mf-title">
     <div class="fp-panel">
       <header class="fp-header">
-        <h4 id="mf-title">Filtros</h4>
+        <h4 id="mf-title" data-i18n="filters_title">Filtros</h4>
         <button id="mf-close" class="btn icon" aria-label="Cerrar">✕</button>
       </header>
       <div class="fp-body" id="mf-body"></div>
       <footer class="fp-footer">
-        <button id="mf-cancel" class="btn">Cancelar</button>
-        <button id="mf-apply" class="btn btn-primary">Aplicar</button>
+        <button id="mf-cancel" class="btn" data-i18n="btn_cancel">Cancelar</button>
+        <button id="mf-apply" class="btn btn-primary" data-i18n="apply_label">Aplicar</button>
       </footer>
     </div>
   </div>
@@ -93,36 +112,103 @@
   <div class="container">
     <div class="admin-grid with-sidebar">
       <div class="panel" id="products-panel">
-        <h2>Productos</h2>
+        <h2 data-i18n="admin_products">Productos</h2>
         <div id="products-list"></div>
         <hr>
-        <h3>Agregar / Editar Producto</h3>
+        <h3 data-i18n="admin_add_edit_product">Agregar / Editar Producto</h3>
         <div>
           <div class="form-row">
-            <input id="prod-name" placeholder="Nombre" />
-            <input id="prod-price" placeholder="Precio" type="number" />
+            <input id="prod-name" placeholder="Nombre" data-i18n-placeholder="prod_name_ph" />
+            <input id="prod-price" placeholder="Precio" type="number" data-i18n-placeholder="prod_price_ph" />
           </div>
           <div class="form-row">
-            <input id="prod-category" placeholder="Categoría" />
-            <input id="prod-emoji" placeholder="Emoji" />
+            <input id="prod-category" placeholder="Categoría" data-i18n-placeholder="prod_category_ph" />
+            <input id="prod-emoji" placeholder="Emoji" data-i18n-placeholder="prod_emoji_ph" />
+          </div>
+          <div class="form-row">
+            <input id="prod-image" placeholder="URL de imagen (opcional)" data-i18n-placeholder="prod_image_ph" />
+            <img id="prod-image-preview" alt="Vista previa" style="width:64px;height:64px;object-fit:cover;border-radius:8px;display:none;" />
+            <div class="error-text" id="prod-image-error" style="margin-left:8px;"></div>
+          </div>
+          <div class="form-row">
+            <input id="prod-image-file" type="file" accept="image/*" />
+            <small class="muted">Puedes subir una imagen (se optimiza a 800px máx) o pegar una URL arriba.</small>
           </div>
           <div class="form-row">
             <input id="prod-id" placeholder="(id auto)" disabled />
-            <button id="prod-save" class="btn-primary">Guardar</button>
-            <button id="prod-clear" class="btn">Limpiar</button>
+            <button id="prod-save" class="btn-primary" data-i18n="admin_save">Guardar</button>
+            <button id="prod-clear" class="btn" data-i18n="admin_clear">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="stylists-panel">
+        <h2 data-i18n="admin_stylists">Estilistas</h2>
+        <div id="stylists-list"></div>
+        <hr>
+        <h3 data-i18n="admin_add_edit_stylist">Agregar / Editar Estilista</h3>
+        <div>
+          <div class="form-row">
+            <input id="sty-name" placeholder="Nombre" data-i18n-placeholder="sty_name_ph" />
+            <input id="sty-title" placeholder="Título" data-i18n-placeholder="sty_title_ph" />
+          </div>
+          <div class="form-row">
+            <input id="sty-rating" placeholder="Rating" type="number" step="0.1" data-i18n-placeholder="sty_rating_ph" />
+            <input id="sty-emoji" placeholder="Emoji" data-i18n-placeholder="sty_emoji_ph" />
+          </div>
+          <div class="form-row">
+            <input id="sty-specialties" placeholder="Especialidades (coma separada)" data-i18n-placeholder="sty_specs_ph" />
+            <input id="sty-image" placeholder="URL de imagen (opcional)" data-i18n-placeholder="sty_image_ph" />
+            <img id="sty-image-preview" alt="Vista previa" style="width:64px;height:64px;object-fit:cover;border-radius:8px;display:none;" />
+            <div class="error-text" id="sty-image-error" style="margin-left:8px;"></div>
+          </div>
+          <div class="form-row">
+            <input id="sty-image-file" type="file" accept="image/*" />
+            <small class="muted">Puedes subir una imagen (se optimiza a 800px máx) o pegar una URL arriba.</small>
+          </div>
+          <div class="form-row">
+            <input id="sty-id" placeholder="(id auto)" disabled />
+            <button id="sty-save" class="btn-primary" data-i18n="admin_save">Guardar</button>
+            <button id="sty-clear" class="btn" data-i18n="admin_clear">Limpiar</button>
           </div>
         </div>
       </div>
 
       <div class="panel" id="reservations-panel">
-        <h2>Reservas</h2>
+        <h2 data-i18n="admin_reservations">Reservas</h2>
         <div id="reservations-list"></div>
         <hr>
-        <button id="reservations-clear" class="btn">Limpiar todas las reservas</button>
+        <button id="reservations-clear" class="btn" data-i18n="admin_clear_reservations">Limpiar todas las reservas</button>
+      </div>
+
+      <div class="panel" id="loyalty-panel">
+        <h2 data-i18n="loyalty_points_title">Puntos de Lealtad</h2>
+        <div class="form-row" style="gap:8px; flex-wrap:wrap;">
+          <input id="lp-email" type="email" placeholder="email@example.com" style="min-width:220px" />
+          <select id="lp-type">
+            <option value="">Tipo</option>
+            <option value="earn">Earn</option>
+            <option value="redeem">Redeem</option>
+          </select>
+          <select id="lp-source">
+            <option value="">Origen</option>
+            <option value="cart">Cart</option>
+            <option value="booking">Booking</option>
+            <option value="admin">Admin</option>
+          </select>
+          <label><span data-i18n="from_label">Desde</span> <input type="date" id="lp-from" /></label>
+          <label><span data-i18n="to_label">Hasta</span> <input type="date" id="lp-to" /></label>
+          <button id="lp-apply" class="btn" data-i18n="apply_label">Aplicar</button>
+          <button id="lp-clear" class="btn" data-i18n="filter_clear">Limpiar</button>
+          <button id="lp-export" class="btn" data-i18n="export_csv">Exportar CSV</button>
+        </div>
+        <div id="lp-results" style="margin-top:12px;"></div>
       </div>
     </div>
   </div>
 
+  <script src="js/i18n.js" defer></script>
+  <script src="js/loyalty.js" defer></script>
   <script src="js/data.js" defer></script>
   <script src="js/admin-auth.js" defer></script>
   <script src="js/admin.js" defer></script>
@@ -132,15 +218,15 @@
       <div class="modal-backdrop"></div>
       <div class="modal-panel" style="max-width:720px;">
         <header class="modal-header">
-          <h3 id="res-modal-title">Editar Reserva</h3>
+          <h3 id="res-modal-title" data-i18n="res_modal_title">Editar Reserva</h3>
           <button id="res-modal-close" aria-label="Cerrar">✕</button>
         </header>
         <main class="modal-body">
           <form id="res-form" onsubmit="return false;">
             <input type="hidden" id="res-id" />
-            <div class="form-row"><input id="res-name" placeholder="Nombre completo" /></div>
-            <div class="form-row"><input id="res-email" placeholder="Email" /></div>
-            <div class="form-row"><input id="res-phone" placeholder="Teléfono" /></div>
+            <div class="form-row"><input id="res-name" placeholder="Nombre completo" data-i18n-placeholder="res_name_ph" /></div>
+            <div class="form-row"><input id="res-email" placeholder="Email" data-i18n-placeholder="res_email_ph" /></div>
+            <div class="form-row"><input id="res-phone" placeholder="Teléfono" data-i18n-placeholder="res_phone_ph" /></div>
             <div id="res-errors" style="color:#c00;margin-top:8px;font-size:14px;display:none;"></div>
             <div class="form-row"><input id="res-date" type="date" /></div>
             <div class="form-row"><input id="res-time" placeholder="HH:MM" /></div>
@@ -148,9 +234,9 @@
             <div class="form-row"><label><input type="checkbox" id="res-upsell"> Tratamiento premium (+$20)</label></div>
             <div class="form-row"><label><input type="checkbox" id="res-paid"> Pagado</label></div>
             <div style="display:flex;gap:8px;margin-top:12px;">
-              <button id="res-save" class="btn-primary">Guardar</button>
-              <button id="res-cancel" class="btn">Cancelar</button>
-              <button id="res-notify" class="btn">Notificar</button>
+              <button id="res-save" class="btn-primary" data-i18n="res_save">Guardar</button>
+              <button id="res-cancel" class="btn" data-i18n="res_cancel">Cancelar</button>
+              <button id="res-notify" class="btn" data-i18n="res_notify">Notificar</button>
             </div>
           </form>
         </main>

@@ -38,9 +38,10 @@ function showBookingStep(step) {
     if(nextBtn) nextBtn.disabled = false;
     // Change next button text depending on step
     if(nextBtn){
-        if(currentBooking.step < 5) nextBtn.textContent = 'Siguiente';
-        else nextBtn.textContent = 'Pagar';
+        if(currentBooking.step < 5) nextBtn.textContent = (window.i18n? i18n.t('booking_next') : 'Siguiente');
+        else nextBtn.textContent = (window.i18n? i18n.t('booking_pay') : 'Pagar');
     }
+    if(prevBtn){ prevBtn.textContent = (window.i18n? i18n.t('booking_prev') : 'Atrás'); }
 }
 
 // Actualizar barra de progreso
@@ -63,20 +64,25 @@ function updateProgressBar(currentStep) {
 function showServiceSelection() {
     const content = getBookingContainer();
     content.innerHTML = `
-        <h3>Selecciona un Servicio</h3>
+        <h3>${(window.i18n? i18n.t('services_title') : 'Selecciona un Servicio')}</h3>
         <div class="services-selection">
-            ${services.map(service => `
+            ${services.map(service => {
+                const nameKey = `service_name_${service.id}`;
+                const descKey = `service_desc_${service.id}`;
+                const displayName = (window.i18n ? i18n.t(nameKey) : service.name);
+                const displayDesc = (window.i18n ? i18n.t(descKey) : service.description);
+                return `
                 <div class="service-option ${currentBooking.service?.id === service.id ? 'selected' : ''}" 
                      onclick="selectService(${service.id})">
-                    <h4>${service.name}</h4>
+                    <h4>${displayName}</h4>
                     <p>$${service.price} - ${service.duration}</p>
-                    <p>${service.description}</p>
-                </div>
-            `).join('')}
+                    <p>${displayDesc}</p>
+                </div>`;
+            }).join('')}
         </div>
         <button class="btn-primary" onclick="nextStep()" 
                 ${!currentBooking.service ? 'disabled' : ''}>
-            Continuar
+            ${(window.i18n? i18n.t('booking_continue') : 'Continuar')}
         </button>
     `;
 }
@@ -85,7 +91,7 @@ function showServiceSelection() {
 function showStylistSelection() {
     const content = getBookingContainer();
     content.innerHTML = `
-        <h3>Selecciona un Estilista</h3>
+        <h3>${(window.i18n? i18n.t('select_stylist_title') : 'Selecciona un Estilista')}</h3>
         <div class="stylists-selection">
             ${stylists.map(stylist => `
                 <div class="stylist-option ${currentBooking.stylist?.id === stylist.id ? 'selected' : ''}" 
@@ -107,16 +113,16 @@ function showDateTimeSelection() {
     const today = new Date().toISOString().split('T')[0];
     
     content.innerHTML = `
-        <h3>Selecciona Fecha y Hora</h3>
+        <h3>${(window.i18n? i18n.t('select_datetime_title') : 'Selecciona Fecha y Hora')}</h3>
         <div class="datetime-selection">
             <div class="form-group">
-                <label>Fecha:</label>
+                <label>${(window.i18n? i18n.t('label_date') : 'Fecha:')}</label>
                 <input type="date" id="booking-date" min="${today}" 
                        value="${currentBooking.date || ''}" 
                        onchange="updateBookingDate(this.value)">
             </div>
             <div class="form-group">
-                <label>Hora:</label>
+                <label>${(window.i18n? i18n.t('label_time') : 'Hora:')}</label>
                 <select id="booking-time" onchange="updateBookingTime(this.value)">
                     <option value="">Selecciona una hora</option>
                     ${generateTimeSlots().map(time => `
@@ -134,37 +140,37 @@ function showDateTimeSelection() {
 function showContactForm() {
     const content = getBookingContainer();
     content.innerHTML = `
-        <h3>Tu Información</h3>
+        <h3>${(window.i18n? i18n.t('your_info_title') : 'Tu Información')}</h3>
         <form id="contact-form" onsubmit="return false;">
             <div class="form-group">
-                <label>Nombre Completo:*</label>
+                <label>${(window.i18n? i18n.t('label_fullname') : 'Nombre Completo:*')}</label>
           <input type="text" id="customer-name" value="${currentBooking.name || ''}" 
               onchange="updateBookingField('name', this.value)" placeholder="Ej. Ana Pérez" required>
           <div class="error-text" id="err-customer-name" aria-live="polite"></div>
             </div>
             <div class="form-group">
-                <label>Email:*</label>
+                <label>${(window.i18n? i18n.t('label_email') : 'Email:*')}</label>
           <input type="email" id="customer-email" value="${currentBooking.email || ''}" 
               onchange="updateBookingField('email', this.value)" placeholder="tu@ejemplo.com" required>
           <div class="error-text" id="err-customer-email" aria-live="polite"></div>
             </div>
             <div class="form-group">
-                <label>Teléfono:*</label>
+                <label>${(window.i18n? i18n.t('label_phone') : 'Teléfono:*')}</label>
           <input type="tel" id="customer-phone" value="${currentBooking.phone || ''}" 
               onchange="updateBookingField('phone', this.value)" placeholder="+34 612 345 678" required pattern="^[0-9+\s\-()]{7,20}$">
           <div class="error-text" id="err-customer-phone" aria-live="polite"></div>
             </div>
             <div class="form-group">
-                <label>Notas Especiales:</label>
+                <label>${(window.i18n? i18n.t('label_notes') : 'Notas Especiales:')}</label>
                 <textarea id="customer-notes" rows="3" 
                           onchange="updateBookingField('notes', this.value)">${currentBooking.notes || ''}</textarea>
             </div>
 
             <!-- Marketing / upsell section -->
             <div class="form-group" id="upsell-area">
-                <label>Mejorar experiencia (opcional)</label>
+                <label>${(window.i18n? i18n.t('upsell_label') : 'Mejorar experiencia (opcional)')}</label>
                 <div>
-                    <label><input type="checkbox" id="upsell-treatment" onchange="toggleUpsell(this.checked)" ${currentBooking.upsell? 'checked':''}> Añadir tratamiento premium (+$20)</label>
+                    <label><input type="checkbox" id="upsell-treatment" onchange="toggleUpsell(this.checked)" ${currentBooking.upsell? 'checked':''}> ${(window.i18n? i18n.t('upsell_option') : 'Añadir tratamiento premium (+$20)')}</label>
                 </div>
                 <small class="muted">Recomendado para mantener el color y brillo. Solo añade $20 al total.</small>
             </div>
@@ -175,30 +181,31 @@ function showContactForm() {
 // PASO 5: Confirmación
 function showConfirmation() {
     const content = getBookingContainer();
+    const estimatePts = (window.Loyalty? Loyalty.estimatePoints(calculateTotalPrice()) : 0);
     content.innerHTML = `
-        <h3>Confirma tu Reserva</h3>
+        <h3>${(window.i18n? i18n.t('confirm_title') : 'Confirma tu Reserva')}</h3>
         <div class="booking-summary">
-            <h4>Resumen de tu Cita:</h4>
+            <h4>${(window.i18n? i18n.t('summary_title') : 'Resumen de tu Cita:')}</h4>
             <div class="summary-item">
-                <strong>Servicio:</strong> ${currentBooking.service.name} - $${currentBooking.service.price}
+                <strong>${(window.i18n? i18n.t('summary_service') : 'Servicio:')}</strong> ${(window.i18n? i18n.t(`service_name_${currentBooking.service.id}`) : currentBooking.service.name)} - $${currentBooking.service.price}
             </div>
             <div class="summary-item">
-                <strong>Estilista:</strong> ${currentBooking.stylist.name}
+                <strong>${(window.i18n? i18n.t('summary_stylist') : 'Estilista:')}</strong> ${currentBooking.stylist.name}
             </div>
             <div class="summary-item">
-                <strong>Fecha:</strong> ${formatDate(currentBooking.date)}
+                <strong>${(window.i18n? i18n.t('summary_date') : 'Fecha:')}</strong> ${formatDate(currentBooking.date)}
             </div>
             <div class="summary-item">
-                <strong>Hora:</strong> ${currentBooking.time}
+                <strong>${(window.i18n? i18n.t('summary_time') : 'Hora:')}</strong> ${currentBooking.time}
             </div>
             <div class="summary-item">
-                <strong>Cliente:</strong> ${currentBooking.name}
+                <strong>${(window.i18n? i18n.t('summary_client') : 'Cliente:')}</strong> ${currentBooking.name}
             </div>
             <div class="summary-item">
-                <strong>Email:</strong> ${currentBooking.email}
+                <strong>${(window.i18n? i18n.t('summary_email') : 'Email:')}</strong> ${currentBooking.email}
             </div>
             <div class="summary-item">
-                <strong>Teléfono:</strong> ${currentBooking.phone}
+                <strong>${(window.i18n? i18n.t('summary_phone') : 'Teléfono:')}</strong> ${currentBooking.phone}
             </div>
             ${currentBooking.notes ? `
                 <div class="summary-item">
@@ -206,8 +213,9 @@ function showConfirmation() {
                 </div>
             ` : ''}
             <div class="total-price">
-                <strong>Total: $${calculateTotalPrice()}</strong>
+                <strong>${(window.i18n? i18n.t('summary_total') : 'Total:')} $${calculateTotalPrice()}</strong>
             </div>
+            ${estimatePts>0? `<div class="tiny" style="margin-top:6px;color:#0f172a;font-weight:600;">+ ${estimatePts} pts</div>`:''}
         </div>
     `;
 }
@@ -358,10 +366,10 @@ function validatePaymentForm(){
     const cvc = (document.getElementById('card-cvc')||{}).value || '';
     // clear errors
     ['card-name','card-number','card-exp','card-cvc'].forEach(id=>{ const e=document.getElementById('err-'+id); if(e) e.textContent=''; const inp=document.getElementById(id); if(inp) inp.classList.remove('input-error'); });
-    if(!name){ document.getElementById('err-card-name').textContent='Nombre requerido'; document.getElementById('card-name').classList.add('input-error'); ok=false; }
-    if(!/^[0-9\s]{12,19}$/.test(number)){ document.getElementById('err-card-number').textContent='Número inválido'; document.getElementById('card-number').classList.add('input-error'); ok=false; }
-    if(!/^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(exp)){ document.getElementById('err-card-exp').textContent='Formato MM/AA'; document.getElementById('card-exp').classList.add('input-error'); ok=false; }
-    if(!/^[0-9]{3,4}$/.test(cvc)){ document.getElementById('err-card-cvc').textContent='CVC inválido'; document.getElementById('card-cvc').classList.add('input-error'); ok=false; }
+    if(!name){ document.getElementById('err-card-name').textContent=(window.i18n? i18n.t('err_required_name') : 'Nombre requerido'); document.getElementById('card-name').classList.add('input-error'); ok=false; }
+    if(!/^[0-9\s]{12,19}$/.test(number)){ document.getElementById('err-card-number').textContent=(window.i18n? i18n.t('err_invalid_number') : 'Número inválido'); document.getElementById('card-number').classList.add('input-error'); ok=false; }
+    if(!/^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(exp)){ document.getElementById('err-card-exp').textContent=(window.i18n? i18n.t('err_invalid_exp') : 'Formato MM/AA'); document.getElementById('card-exp').classList.add('input-error'); ok=false; }
+    if(!/^[0-9]{3,4}$/.test(cvc)){ document.getElementById('err-card-cvc').textContent=(window.i18n? i18n.t('err_invalid_cvc') : 'CVC inválido'); document.getElementById('card-cvc').classList.add('input-error'); ok=false; }
     return ok;
 }
 
@@ -370,6 +378,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
     const payClose = document.getElementById('payment-close');
     const payCancel = document.getElementById('payment-cancel');
     const paySubmit = document.getElementById('payment-submit');
+    // Set button texts with i18n if available
+    if(payCancel && window.i18n){ payCancel.textContent = i18n.t('btn_cancel'); }
+    if(paySubmit && window.i18n){ paySubmit.textContent = i18n.t('btn_pay'); }
     if(payClose) payClose.addEventListener('click', closePaymentModal);
     if(payCancel) payCancel.addEventListener('click', closePaymentModal);
     if(paySubmit) paySubmit.addEventListener('click', ()=>{
@@ -380,9 +391,41 @@ document.addEventListener('DOMContentLoaded', ()=>{
             showBookingSpinner(false);
             const reservation = window._pendingReservation;
             if(reservation){ reservation.paid = true; persistAndFinalize(reservation); window._pendingReservation = null; }
+            // loyalty integration: add points if email exists
+            try{
+                const email = (currentBooking && currentBooking.email) || '';
+                const name = (currentBooking && currentBooking.name) || '';
+                const total = calculateTotalPrice();
+                const pts = (window.Loyalty? Loyalty.estimatePoints(total) : 0);
+                if(email && pts>0 && window.Loyalty){ Loyalty.addPoints(email, name, pts); }
+                else if(!email && pts>0 && window.showNotification){
+                    const invite = (window.i18n? 'Para acumular puntos, ingresa tu email y únete como miembro.' : 'Enter your email to earn loyalty points!');
+                    showNotification(invite);
+                }
+            }catch(e){}
             closePaymentModal();
         }, 1200);
     });
+
+    // Auto-format MM/AA for card expiration field
+    const expInput = document.getElementById('card-exp');
+    if(expInput){
+        expInput.setAttribute('inputmode','numeric');
+        expInput.setAttribute('maxlength','5');
+        expInput.addEventListener('input', (e)=>{
+            const el = e.target;
+            let v = (el.value || '').replace(/[^0-9]/g, '');
+            if(v.length > 4) v = v.slice(0,4);
+            // Insert slash after two digits when available
+            if(v.length >= 3){
+                el.value = v.slice(0,2) + '/' + v.slice(2);
+            } else if(v.length >= 1){
+                el.value = v;
+            } else {
+                el.value = '';
+            }
+        });
+    }
 
     // Global Escape handler to close modals when open
     document.addEventListener('keydown', (e)=>{
@@ -424,7 +467,7 @@ function persistAndFinalize(reservation){
         </div>
     `;
 
-    showNotification('Reserva registrada. Revisa tu correo para más detalles.');
+    showNotification((window.i18n? i18n.t('booking_saved_notify') : 'Reserva registrada. Revisa tu correo para más detalles.'));
     const modal = document.getElementById('booking-modal');
     if(modal) closeBookingModal();
     if(window.Petals && typeof window.Petals.burst === 'function') window.Petals.burst({count: 40});

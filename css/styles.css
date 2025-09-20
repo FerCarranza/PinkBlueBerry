@@ -432,6 +432,20 @@ section h2 {
 .navbar.admin-header .nav-links a:hover { color: #fff; opacity: 0.9; }
 .navbar.admin-header .hamburger { color: #fff; }
 .navbar.admin-header .cart-icon { color: #fff; }
+/* Make nav list transparent on desktop so gradient shows through */
+@media (min-width: 900px){
+  .navbar.admin-header .nav-links { background: transparent !important; box-shadow: none !important; }
+  .navbar.admin-header .nav-links a { background: transparent !important; }
+}
+/* Style language selector to match gradient */
+.navbar.admin-header .lang-select {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+.navbar.admin-header .lang-select option{ color: #000; }
 
 /* Site logo (shared) */
 .logo-img { box-shadow: 0 8px 20px rgba(59,130,246,0.06); border-radius: 10px; }
