@@ -39,7 +39,7 @@
   }
 
   function open(nav, btn){
-    const STORE_KEY = 'pb_nav_open_v1';
+    const STORE_KEY = (window.AppConfig && AppConfig.storage.navOpen) || 'pb_nav_open_v1';
     const header = qs('.navbar');
     const rect = header ? header.getBoundingClientRect() : { height: 0, top: 0 };
     const top = rect.bottom || rect.height || 56;
@@ -115,7 +115,8 @@
     if(!btn){ btn = document.createElement('button'); btn.id = 'hamburger'; btn.className = 'hamburger'; btn.setAttribute('aria-label','Abrir menú'); btn.setAttribute('aria-expanded','false'); btn.textContent = '☰'; const actions = qs('.nav-actions') || qs('.container'); if(actions) actions.appendChild(btn); }
 
     // Responsive interactivity controller
-    const mql = window.matchMedia('(min-width: 900px)');
+    const bp = (window.AppConfig && AppConfig.breakpoints.desktopMin) || 900;
+    const mql = window.matchMedia(`(min-width: ${bp}px)`);
     function isDesktop(){ return mql.matches; }
     function enableDesktopMode(){
       // clear mobile styles
@@ -220,7 +221,7 @@
 
     // Restore saved mobile open state (only on mobile)
     try{
-      const raw = localStorage.getItem('pb_nav_open_v1');
+      const raw = localStorage.getItem((window.AppConfig && AppConfig.storage.navOpen) || 'pb_nav_open_v1');
       const obj = raw ? JSON.parse(raw) : null;
       if(obj && obj.open && !isDesktop()){
         // ensure correct top

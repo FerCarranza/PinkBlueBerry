@@ -39,6 +39,14 @@
   <!-- Sidebar controls (moved to left column for desktop) -->
   <aside class="admin-sidebar">
     <button id="filters-toggle" class="filters-toggle" aria-expanded="true" aria-controls="filters-container">Ocultar filtros</button>
+    <!-- Toolbar de filtros (modo móvil tipo chips) -->
+    <div class="filters-toolbar" id="filters-toolbar" aria-label="Filtros rápidos">
+      <button class="chip" data-filter="stylist">Estilista</button>
+      <button class="chip" data-filter="status">Estado</button>
+      <button class="chip" data-filter="date">Fecha</button>
+      <button class="chip" data-filter="search">Buscar</button>
+      <button class="chip" data-filter="clear">Limpiar</button>
+    </div>
     <div id="filters-container" class="sidebar-inner container">
       <div class="sidebar-section">
         <h4>Filtros</h4>
@@ -66,6 +74,21 @@
       </div>
     </div>
   </aside>
+
+  <!-- Popover móvil para filtros (reutiliza valores y aplica cambios) -->
+  <div id="mobile-filter-popover" class="filter-popover" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="mf-title">
+    <div class="fp-panel">
+      <header class="fp-header">
+        <h4 id="mf-title">Filtros</h4>
+        <button id="mf-close" class="btn icon" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="fp-body" id="mf-body"></div>
+      <footer class="fp-footer">
+        <button id="mf-cancel" class="btn">Cancelar</button>
+        <button id="mf-apply" class="btn btn-primary">Aplicar</button>
+      </footer>
+    </div>
+  </div>
 
   <div class="container">
     <div class="admin-grid with-sidebar">

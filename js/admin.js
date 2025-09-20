@@ -16,6 +16,78 @@
       case 'arrow-right': return `<svg ${common}><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       default: return '';
     }
+
+  function bindMobileFiltersToolbar(){
+    const toolbar = document.getElementById('filters-toolbar');
+    const pop = document.getElementById('mobile-filter-popover');
+    const body = document.getElementById('mf-body');
+    const btnClose = document.getElementById('mf-close');
+    const btnApply = document.getElementById('mf-apply');
+    const btnCancel = document.getElementById('mf-cancel');
+    if(!toolbar || !pop || !body) return;
+    function isSmall(){ return window.matchMedia && window.matchMedia('(max-width: 900px)').matches; }
+    function openPopover(kind){
+      body.innerHTML = '';
+      // clone relevant controls
+      if(kind==='stylist'){
+        const sel = document.getElementById('filter-stylist').cloneNode(true); sel.id = 'mf-stylist'; sel.value = document.getElementById('filter-stylist').value; body.appendChild(wrapField('Estilista', sel));
+      } else if(kind==='status'){
+        const sel = document.getElementById('filter-status').cloneNode(true); sel.id = 'mf-status'; sel.value = document.getElementById('filter-status').value; body.appendChild(wrapField('Estado', sel));
+      } else if(kind==='date'){
+        const f = document.getElementById('filter-date-from').cloneNode(true); f.id='mf-date-from'; f.value = document.getElementById('filter-date-from').value;
+        const t = document.getElementById('filter-date-to').cloneNode(true); t.id='mf-date-to'; t.value = document.getElementById('filter-date-to').value;
+        body.appendChild(wrapField('Desde', f)); body.appendChild(wrapField('Hasta', t));
+      } else if(kind==='search'){
+        const q = document.getElementById('filter-search').cloneNode(true); q.id='mf-search'; q.value = document.getElementById('filter-search').value; body.appendChild(wrapField('Buscar', q));
+      }
+      pop.setAttribute('aria-hidden','false'); pop.style.display='flex';
+    }
+    function closePopover(){ pop.setAttribute('aria-hidden','true'); pop.style.display='none'; }
+    function wrapField(label, node){ const div = document.createElement('div'); div.className = 'form-group'; const l = document.createElement('label'); l.textContent = label; div.appendChild(l); div.appendChild(node); return div; }
+
+    function labelChips(){
+      const tb = document.getElementById('filters-toolbar'); if(!tb) return;
+      const status = document.getElementById('filter-status').value;
+      const from = document.getElementById('filter-date-from').value;
+      const to = document.getElementById('filter-date-to').value;
+      const search = document.getElementById('filter-search').value;
+      const statusChip = tb.querySelector('[data-filter="status"]'); if(statusChip){ statusChip.textContent = status && status!=='all' ? `Estado: ${status}` : 'Estado'; }
+      const dateChip = tb.querySelector('[data-filter="date"]'); if(dateChip){ dateChip.textContent = (from||to) ? `Fecha: ${from||''}${to? ' → '+to:''}` : 'Fecha'; }
+      const searchChip = tb.querySelector('[data-filter="search"]'); if(searchChip){ searchChip.textContent = search ? `Buscar: ${search}` : 'Buscar'; }
+    }
+    labelChips();
+
+    toolbar.addEventListener('click', (e)=>{
+      const chip = e.target.closest && e.target.closest('.chip');
+      if(!chip || !isSmall()) return;
+      const kind = chip.getAttribute('data-filter');
+      if(kind==='clear'){
+        document.getElementById('filter-status').value='all';
+        document.getElementById('filter-stylist').value='';
+        document.getElementById('filter-date-from').value='';
+        document.getElementById('filter-date-to').value='';
+        document.getElementById('filter-search').value='';
+        const applyBtn = document.getElementById('filter-apply'); if(applyBtn) applyBtn.click(); else renderReservations();
+        labelChips();
+        return;
+      }
+      openPopover(kind);
+    });
+    btnClose && btnClose.addEventListener('click', closePopover);
+    btnCancel && btnCancel.addEventListener('click', closePopover);
+    btnApply && btnApply.addEventListener('click', ()=>{
+      // write back values
+      const s1 = document.getElementById('mf-stylist'); if(s1) document.getElementById('filter-stylist').value = s1.value;
+      const s2 = document.getElementById('mf-status'); if(s2) document.getElementById('filter-status').value = s2.value;
+      const d1 = document.getElementById('mf-date-from'); if(d1) document.getElementById('filter-date-from').value = d1.value;
+      const d2 = document.getElementById('mf-date-to'); if(d2) document.getElementById('filter-date-to').value = d2.value;
+      const q = document.getElementById('mf-search'); if(q) document.getElementById('filter-search').value = q.value;
+      closePopover();
+      // call existing apply
+      const applyBtn = document.getElementById('filter-apply'); if(applyBtn) applyBtn.click(); else renderReservations();
+      labelChips();
+    });
+  }
   }
 
   // Return HTML for a button with icon and optional text. attrs should be a string of attributes (e.g. 'data-id="1" class="btn"')
@@ -449,9 +521,46 @@
   }
 
   function bindFilterActions(){
-    document.getElementById('filter-apply').addEventListener('click', applyFilters);
+    const STORAGE = (window.AppConfig && AppConfig.storage) || { };
+    const KEY = STORAGE.adminFilters || 'pb_admin_filters_state_v1';
+    function saveState(){
+      const state = {
+        stylist: document.getElementById('filter-stylist').value,
+        status: document.getElementById('filter-status').value,
+        from: document.getElementById('filter-date-from').value,
+        to: document.getElementById('filter-date-to').value,
+        q: document.getElementById('filter-search').value
+      };
+      try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+      updateChipsActive(state);
+    }
+    function loadState(){
+      try{
+        const raw = localStorage.getItem(KEY); if(!raw) return;
+        const s = JSON.parse(raw) || {};
+        if('stylist' in s) document.getElementById('filter-stylist').value = s.stylist;
+        if('status' in s) document.getElementById('filter-status').value = s.status;
+        if('from' in s) document.getElementById('filter-date-from').value = s.from;
+        if('to' in s) document.getElementById('filter-date-to').value = s.to;
+        if('q' in s) document.getElementById('filter-search').value = s.q;
+        updateChipsActive(s);
+      }catch(e){}
+    }
+    function updateChipsActive(state){
+      const toolbar = document.getElementById('filters-toolbar'); if(!toolbar) return;
+      function setActive(name, isActive){ const chip = toolbar.querySelector(`.chip[data-filter="${name}"]`); if(!chip) return; chip.classList.toggle('active', !!isActive); }
+      setActive('stylist', !!state.stylist);
+      setActive('status', state.status && state.status !== 'all');
+      setActive('date', !!state.from || !!state.to);
+      setActive('search', !!state.q);
+    }
+
+    // apply + persist
+    document.getElementById('filter-apply').addEventListener('click', ()=>{ saveState(); applyFilters(); });
     document.getElementById('filter-clear').addEventListener('click', ()=>{ document.getElementById('filter-status').value='all'; document.getElementById('filter-stylist').value=''; document.getElementById('filter-date-from').value=''; document.getElementById('filter-date-to').value=''; document.getElementById('filter-search').value=''; renderReservations(); });
     document.getElementById('export-csv').addEventListener('click', exportCSV);
+    // load state on bind
+    loadState();
   }
 
   function bindFiltersToggle(){
@@ -484,7 +593,7 @@
   // On load
   document.addEventListener('DOMContentLoaded', ()=>{
     renderProducts(); renderReservations(); bind();
-    populateFilterControls(); bindModalActions(); bindFilterActions(); bindFiltersToggle();
+    populateFilterControls(); bindModalActions(); bindFilterActions(); bindFiltersToggle(); bindMobileFiltersToolbar();
   });
 
   // Expose helper for other scripts: allow saving reservations
