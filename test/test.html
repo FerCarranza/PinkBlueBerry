@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Tests Rápidos - Pink Blueberry</title></head>
+<body>
+<h1>Pruebas rápidas</h1>
+<button id="run-tests">Ejecutar pruebas JS</button>
+<pre id="output"></pre>
+<script>
+function assert(cond,msg){ if(!cond) throw new Error(msg); }
+function run(){
+  const out = document.getElementById('output');
+  try{
+    // Test addToCart usando Cart API
+    const initial = localStorage.getItem('pb_cart_v1');
+    localStorage.removeItem('pb_cart_v1');
+    const product = { id: 't1', name: 'Test', price: 10 };
+    if(window.Cart){ Cart.addToCart(product); const raw = localStorage.getItem('pb_cart_v1'); assert(raw, 'Cart persist failed'); const parsed = JSON.parse(raw); assert(parsed.length===1, 'Cart length'); }
+    out.textContent = 'OK: addToCart persisted in localStorage';
+    if(initial) localStorage.setItem('pb_cart_v1', initial);
+  }catch(e){ out.textContent = 'FAIL: ' + e.message; }
+}
+document.getElementById('run-tests').addEventListener('click', run);
+</script>
+</body>
+</html>

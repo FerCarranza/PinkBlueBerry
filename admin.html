@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - Pink Blueberry</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="Spanish/Copy of pink_blueberry_luxury_logo_5.png">
+</head>
+<body>
+  <nav class="navbar admin-header">
+    <div class="container">
+      <div class="brand-row">
+        <img src="Spanish/Copy of pink_blueberry_luxury_logo_5.png" srcset="Spanish/Copy of pink_blueberry_luxury_logo_5.png 1x" alt="Pink Blueberry Logo" class="logo-img">
+        <h1 class="logo">The Pink Blueberry</h1>
+      </div>
+      <ul class="nav-links">
+        <li><a href="index.html">Ver sitio</a></li>
+        <li><a href="admin-login.html">Logout</a></li>
+      </ul>
+      <div class="nav-actions">
+        <div class="cart-icon" aria-hidden="true">🛒</div>
+        <button id="hamburger" class="hamburger" aria-label="Abrir menú" aria-expanded="false">☰</button>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero admin-hero">
+    <div class="container">
+      <h2 class="hero-title">Panel de Administración</h2>
+      <p class="hero-subtitle">Administrar productos de la tienda y ver reservas</p>
+    </div>
+  </section>
+
+  <!-- Sidebar controls (moved to left column for desktop) -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-inner container">
+      <div class="sidebar-section">
+        <h4>Filtros</h4>
+        <select id="filter-stylist"><option value="">Todos los estilistas</option></select>
+        <select id="filter-status"><option value="all">Todos</option><option value="paid">Pagadas</option><option value="pending">Pendientes</option></select>
+        <label>Desde <input type="date" id="filter-date-from" /></label>
+        <label>Hasta <input type="date" id="filter-date-to" /></label>
+        <input id="filter-search" placeholder="Buscar por nombre o email" />
+        <div class="sidebar-actions">
+          <button id="filter-apply" class="btn">Aplicar</button>
+          <button id="filter-clear" class="btn">Limpiar</button>
+          <button id="export-csv" class="btn">Exportar CSV</button>
+        </div>
+        <label class="sidebar-toggle"><input type="checkbox" id="toggle-petals"> Activar animación pétalos</label>
+      </div>
+
+      <div class="sidebar-section">
+        <h4>Sesión</h4>
+        <button id="admin-logout" class="btn">Cerrar sesión</button>
+        <div class="change-pass">
+          <input id="admin-old-pass" placeholder="Contraseña actual" type="password">
+          <input id="admin-new-pass" placeholder="Nueva contraseña" type="password">
+          <button id="admin-change-pass" class="btn">Cambiar contraseña</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="container">
+    <div class="admin-grid with-sidebar">
+      <div class="panel" id="products-panel">
+        <h2>Productos</h2>
+        <div id="products-list"></div>
+        <hr>
+        <h3>Agregar / Editar Producto</h3>
+        <div>
+          <div class="form-row">
+            <input id="prod-name" placeholder="Nombre" />
+            <input id="prod-price" placeholder="Precio" type="number" />
+          </div>
+          <div class="form-row">
+            <input id="prod-category" placeholder="Categoría" />
+            <input id="prod-emoji" placeholder="Emoji" />
+          </div>
+          <div class="form-row">
+            <input id="prod-id" placeholder="(id auto)" disabled />
+            <button id="prod-save" class="btn-primary">Guardar</button>
+            <button id="prod-clear" class="btn">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="reservations-panel">
+        <h2>Reservas</h2>
+        <div id="reservations-list"></div>
+        <hr>
+        <button id="reservations-clear" class="btn">Limpiar todas las reservas</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/admin-auth.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/nav.js"></script>
+    <!-- Modal para editar/mover reservas -->
+    <div id="reservation-modal" class="modal" aria-hidden="true" style="display:none;">
+      <div class="modal-backdrop"></div>
+      <div class="modal-panel" style="max-width:720px;">
+        <header class="modal-header">
+          <h3 id="res-modal-title">Editar Reserva</h3>
+          <button id="res-modal-close" aria-label="Cerrar">✕</button>
+        </header>
+        <main class="modal-body">
+          <form id="res-form" onsubmit="return false;">
+            <input type="hidden" id="res-id" />
+            <div class="form-row"><input id="res-name" placeholder="Nombre completo" /></div>
+            <div class="form-row"><input id="res-email" placeholder="Email" /></div>
+            <div class="form-row"><input id="res-phone" placeholder="Teléfono" /></div>
+            <div id="res-errors" style="color:#c00;margin-top:8px;font-size:14px;display:none;"></div>
+            <div class="form-row"><input id="res-date" type="date" /></div>
+            <div class="form-row"><input id="res-time" placeholder="HH:MM" /></div>
+            <div class="form-row"><select id="res-service"></select><select id="res-stylist"></select></div>
+            <div class="form-row"><label><input type="checkbox" id="res-upsell"> Tratamiento premium (+$20)</label></div>
+            <div class="form-row"><label><input type="checkbox" id="res-paid"> Pagado</label></div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button id="res-save" class="btn-primary">Guardar</button>
+              <button id="res-cancel" class="btn">Cancelar</button>
+              <button id="res-notify" class="btn">Notificar</button>
+            </div>
+          </form>
+        </main>
+      </div>
+    </div>
+</body>
+</html>

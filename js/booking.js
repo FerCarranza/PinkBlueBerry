@@ -1,11 +1,19 @@
 // Mostrar paso actual de la reserva
+function getBookingContainer(){
+    // Prefer modal body when available
+    const modalBody = document.getElementById('booking-modal-body');
+    if(modalBody) return modalBody;
+    return document.getElementById('booking-content');
+}
+
 function showBookingStep(step) {
     currentBooking.step = step;
     updateProgressBar(step);
-    
-    const content = document.getElementById('booking-content');
+
+    const content = getBookingContainer();
+    if(!content) return;
     content.innerHTML = '';
-    
+
     switch(step) {
         case 1:
             showServiceSelection();
@@ -22,6 +30,16 @@ function showBookingStep(step) {
         case 5:
             showConfirmation();
             break;
+    }
+    // update modal footer buttons state if modal present
+    const prevBtn = document.getElementById('booking-prev');
+    const nextBtn = document.getElementById('booking-next');
+    if(prevBtn) prevBtn.disabled = currentBooking.step <= 1;
+    if(nextBtn) nextBtn.disabled = false;
+    // Change next button text depending on step
+    if(nextBtn){
+        if(currentBooking.step < 5) nextBtn.textContent = 'Siguiente';
+        else nextBtn.textContent = 'Pagar';
     }
 }
 
@@ -43,7 +61,7 @@ function updateProgressBar(currentStep) {
 
 // PASO 1: Selección de Servicio
 function showServiceSelection() {
-    const content = document.getElementById('booking-content');
+    const content = getBookingContainer();
     content.innerHTML = `
         <h3>Selecciona un Servicio</h3>
         <div class="services-selection">
@@ -65,7 +83,7 @@ function showServiceSelection() {
 
 // PASO 2: Selección de Estilista
 function showStylistSelection() {
-    const content = document.getElementById('booking-content');
+    const content = getBookingContainer();
     content.innerHTML = `
         <h3>Selecciona un Estilista</h3>
         <div class="stylists-selection">
@@ -80,19 +98,12 @@ function showStylistSelection() {
                 </div>
             `).join('')}
         </div>
-        <div class="booking-navigation">
-            <button onclick="previousStep()">Atrás</button>
-            <button class="btn-primary" onclick="nextStep()"
-                    ${!currentBooking.stylist ? 'disabled' : ''}>
-                Continuar
-            </button>
-        </div>
     `;
 }
 
 // PASO 3: Selección de Fecha y Hora
 function showDateTimeSelection() {
-    const content = document.getElementById('booking-content');
+    const content = getBookingContainer();
     const today = new Date().toISOString().split('T')[0];
     
     content.innerHTML = `
@@ -116,55 +127,54 @@ function showDateTimeSelection() {
                 </select>
             </div>
         </div>
-        <div class="booking-navigation">
-            <button onclick="previousStep()">Atrás</button>
-            <button class="btn-primary" onclick="nextStep()"
-                    ${!currentBooking.date || !currentBooking.time ? 'disabled' : ''}>
-                Continuar
-            </button>
-        </div>
     `;
 }
 
 // PASO 4: Información de Contacto
 function showContactForm() {
-    const content = document.getElementById('booking-content');
+    const content = getBookingContainer();
     content.innerHTML = `
         <h3>Tu Información</h3>
         <form id="contact-form" onsubmit="return false;">
             <div class="form-group">
                 <label>Nombre Completo:*</label>
-                <input type="text" id="customer-name" value="${currentBooking.name}" 
-                       onchange="updateBookingField('name', this.value)" required>
+          <input type="text" id="customer-name" value="${currentBooking.name || ''}" 
+              onchange="updateBookingField('name', this.value)" placeholder="Ej. Ana Pérez" required>
+          <div class="error-text" id="err-customer-name" aria-live="polite"></div>
             </div>
             <div class="form-group">
                 <label>Email:*</label>
-                <input type="email" id="customer-email" value="${currentBooking.email}" 
-                       onchange="updateBookingField('email', this.value)" required>
+          <input type="email" id="customer-email" value="${currentBooking.email || ''}" 
+              onchange="updateBookingField('email', this.value)" placeholder="tu@ejemplo.com" required>
+          <div class="error-text" id="err-customer-email" aria-live="polite"></div>
             </div>
             <div class="form-group">
                 <label>Teléfono:*</label>
-                <input type="tel" id="customer-phone" value="${currentBooking.phone}" 
-                       onchange="updateBookingField('phone', this.value)" required>
+          <input type="tel" id="customer-phone" value="${currentBooking.phone || ''}" 
+              onchange="updateBookingField('phone', this.value)" placeholder="+34 612 345 678" required pattern="^[0-9+\s\-()]{7,20}$">
+          <div class="error-text" id="err-customer-phone" aria-live="polite"></div>
             </div>
             <div class="form-group">
                 <label>Notas Especiales:</label>
                 <textarea id="customer-notes" rows="3" 
-                          onchange="updateBookingField('notes', this.value)">${currentBooking.notes}</textarea>
+                          onchange="updateBookingField('notes', this.value)">${currentBooking.notes || ''}</textarea>
+            </div>
+
+            <!-- Marketing / upsell section -->
+            <div class="form-group" id="upsell-area">
+                <label>Mejorar experiencia (opcional)</label>
+                <div>
+                    <label><input type="checkbox" id="upsell-treatment" onchange="toggleUpsell(this.checked)" ${currentBooking.upsell? 'checked':''}> Añadir tratamiento premium (+$20)</label>
+                </div>
+                <small class="muted">Recomendado para mantener el color y brillo. Solo añade $20 al total.</small>
             </div>
         </form>
-        <div class="booking-navigation">
-            <button onclick="previousStep()">Atrás</button>
-            <button class="btn-primary" onclick="validateAndContinue()">
-                Continuar
-            </button>
-        </div>
     `;
 }
 
 // PASO 5: Confirmación
 function showConfirmation() {
-    const content = document.getElementById('booking-content');
+    const content = getBookingContainer();
     content.innerHTML = `
         <h3>Confirma tu Reserva</h3>
         <div class="booking-summary">
@@ -196,16 +206,16 @@ function showConfirmation() {
                 </div>
             ` : ''}
             <div class="total-price">
-                <strong>Total: $${currentBooking.service.price}</strong>
+                <strong>Total: $${calculateTotalPrice()}</strong>
             </div>
         </div>
-        <div class="booking-navigation">
-            <button onclick="previousStep()">Atrás</button>
-            <button class="btn-primary" onclick="confirmBooking()">
-                Confirmar Reserva
-            </button>
-        </div>
     `;
+}
+
+function calculateTotalPrice(){
+    const base = currentBooking.service ? Number(currentBooking.service.price) : 0;
+    const upsell = currentBooking.upsell ? 20 : 0;
+    return base + upsell;
 }
 
 // FUNCIONES DE SELECCIÓN
@@ -231,6 +241,10 @@ function updateBookingField(field, value) {
     currentBooking[field] = value;
 }
 
+function toggleUpsell(checked){
+    currentBooking.upsell = !!checked;
+}
+
 // NAVEGACIÓN
 function nextStep() {
     if (currentBooking.step < 5) {
@@ -246,21 +260,42 @@ function previousStep() {
 
 // VALIDACIÓN
 function validateAndContinue() {
-    const name = document.getElementById('customer-name').value;
-    const email = document.getElementById('customer-email').value;
-    const phone = document.getElementById('customer-phone').value;
-    
-    if (!name || !email || !phone) {
-        alert('Por favor completa todos los campos requeridos');
-        return;
+    clearFieldError('customer-name');
+    clearFieldError('customer-email');
+    clearFieldError('customer-phone');
+
+    const name = (document.getElementById('customer-name')||{}).value || '';
+    const email = (document.getElementById('customer-email')||{}).value || '';
+    const phone = (document.getElementById('customer-phone')||{}).value || '';
+
+    let ok = true;
+    if(!name){ showFieldError('customer-name','El nombre es obligatorio'); ok = false; }
+    if(!phone){ showFieldError('customer-phone','El teléfono es obligatorio'); ok = false; }
+    else {
+        const phonePattern = /^[0-9+\s\-()]{7,20}$/;
+        if(!phonePattern.test(phone)){ showFieldError('customer-phone','Formato de teléfono inválido'); ok = false; }
     }
-    
-    if (!validateEmail(email)) {
-        alert('Por favor ingresa un email válido');
-        return;
-    }
-    
+    if(!email){ showFieldError('customer-email','El email es obligatorio'); ok = false; }
+    else if(!validateEmail(email)){ showFieldError('customer-email','Ingresa un email válido'); ok = false; }
+
+    if(!ok) return;
+
     nextStep();
+}
+
+// Field error helpers
+function showFieldError(fieldId, message){
+    const input = document.getElementById(fieldId);
+    const err = document.getElementById('err-' + fieldId);
+    if(input) input.classList.add('input-error');
+    if(err) err.textContent = message;
+}
+
+function clearFieldError(fieldId){
+    const input = document.getElementById(fieldId);
+    const err = document.getElementById('err-' + fieldId);
+    if(input) input.classList.remove('input-error');
+    if(err) err.textContent = '';
 }
 
 function validateEmail(email) {
@@ -270,21 +305,149 @@ function validateEmail(email) {
 
 // CONFIRMACIÓN
 function confirmBooking() {
-    // Mostrar mensaje de éxito
-    document.getElementById('booking-content').innerHTML = `
+    // build reservation object
+    const reservation = {
+        id: generateConfirmationNumber(),
+        name: currentBooking.name,
+        email: currentBooking.email,
+        phone: currentBooking.phone,
+        serviceId: currentBooking.service?.id,
+        serviceName: currentBooking.service?.name,
+        stylistId: currentBooking.stylist?.id,
+        stylistName: currentBooking.stylist?.name,
+        date: currentBooking.date,
+        time: currentBooking.time,
+        notes: currentBooking.notes || '',
+        upsell: !!currentBooking.upsell,
+        amount: calculateTotalPrice(),
+        paid: false,
+        notificationSent: false,
+        createdAt: new Date().toISOString()
+    };
+
+    // Open payment modal (mock) to collect card details
+    window._pendingReservation = reservation; // keep temporarily
+    openPaymentModal();
+}
+
+// Payment modal helpers (mock)
+function openPaymentModal(){
+    const modal = document.getElementById('payment-modal');
+    if(!modal) return;
+    modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden','false');
+}
+
+function closePaymentModal(){
+    const modal = document.getElementById('payment-modal');
+    if(!modal) return;
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden','true');
+}
+
+function validatePaymentForm(){
+    // simple field checks
+    let ok = true;
+    const name = (document.getElementById('card-name')||{}).value || '';
+    const number = (document.getElementById('card-number')||{}).value || '';
+    const exp = (document.getElementById('card-exp')||{}).value || '';
+    const cvc = (document.getElementById('card-cvc')||{}).value || '';
+    // clear errors
+    ['card-name','card-number','card-exp','card-cvc'].forEach(id=>{ const e=document.getElementById('err-'+id); if(e) e.textContent=''; const inp=document.getElementById(id); if(inp) inp.classList.remove('input-error'); });
+    if(!name){ document.getElementById('err-card-name').textContent='Nombre requerido'; document.getElementById('card-name').classList.add('input-error'); ok=false; }
+    if(!/^[0-9\s]{12,19}$/.test(number)){ document.getElementById('err-card-number').textContent='Número inválido'; document.getElementById('card-number').classList.add('input-error'); ok=false; }
+    if(!/^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(exp)){ document.getElementById('err-card-exp').textContent='Formato MM/AA'; document.getElementById('card-exp').classList.add('input-error'); ok=false; }
+    if(!/^[0-9]{3,4}$/.test(cvc)){ document.getElementById('err-card-cvc').textContent='CVC inválido'; document.getElementById('card-cvc').classList.add('input-error'); ok=false; }
+    return ok;
+}
+
+// wire payment buttons on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', ()=>{
+    const payClose = document.getElementById('payment-close');
+    const payCancel = document.getElementById('payment-cancel');
+    const paySubmit = document.getElementById('payment-submit');
+    if(payClose) payClose.addEventListener('click', closePaymentModal);
+    if(payCancel) payCancel.addEventListener('click', closePaymentModal);
+    if(paySubmit) paySubmit.addEventListener('click', ()=>{
+        if(!validatePaymentForm()) return;
+        // simulate processing
+        showBookingSpinner(true);
+        setTimeout(()=>{
+            showBookingSpinner(false);
+            const reservation = window._pendingReservation;
+            if(reservation){ reservation.paid = true; persistAndFinalize(reservation); window._pendingReservation = null; }
+            closePaymentModal();
+        }, 1200);
+    });
+});
+
+function persistAndFinalize(reservation){
+    try{
+        if(window.AdminAPI && typeof window.AdminAPI.saveReservation === 'function'){
+            window.AdminAPI.saveReservation(reservation);
+        } else {
+            // fallback: write directly to pb_reservations_v1
+            const key = 'pb_reservations_v1';
+            const raw = localStorage.getItem(key); const list = raw ? JSON.parse(raw) : [];
+            list.push(reservation); localStorage.setItem(key, JSON.stringify(list));
+        }
+    }catch(e){ console.warn('No se pudo guardar la reserva localmente', e); }
+    // clear any messages/spinner
+    showBookingSpinner(false);
+    clearBookingMessage();
+
+    // show success UI
+    const content = getBookingContainer();
+    content.innerHTML = `
         <div class="booking-success">
             <h3>¡Reserva Confirmada! ✨</h3>
-            <p>Gracias ${currentBooking.name}!</p>
+            <p>Gracias ${reservation.name}!</p>
             <p>Tu cita ha sido reservada exitosamente.</p>
-            <p>Número de confirmación: #${generateConfirmationNumber()}</p>
-            <p>Te hemos enviado un email de confirmación a ${currentBooking.email}</p>
-            <button class="btn-primary" onclick="resetBooking()">
-                Hacer Otra Reserva
-            </button>
+            <p>Número de confirmación: #${reservation.id}</p>
+            <p>Te hemos enviado (simulado) un email de confirmación a ${reservation.email}</p>
+            <p class="muted">Estado de pago: ${reservation.paid ? 'Pagado' : 'Pendiente'}</p>
+            <button class="btn-primary" onclick="resetBooking()">Hacer Otra Reserva</button>
         </div>
     `;
-    
-    showNotification('¡Reserva confirmada exitosamente!');
+
+    showNotification('Reserva registrada. Revisa tu correo para más detalles.');
+    const modal = document.getElementById('booking-modal');
+    if(modal) closeBookingModal();
+    if(window.Petals && typeof window.Petals.burst === 'function') window.Petals.burst({count: 40});
+}
+
+// Inline message and spinner helpers
+function showBookingMessage(message, type='info'){
+    let container = document.getElementById('booking-message');
+    if(!container){
+        const content = getBookingContainer();
+        container = document.createElement('div');
+        container.id = 'booking-message';
+        container.className = 'booking-message';
+        content.insertBefore(container, content.firstChild);
+    }
+    container.innerHTML = `<div class="message ${type}">${message}</div>`;
+}
+
+function clearBookingMessage(){
+    const container = document.getElementById('booking-message');
+    if(container) container.remove();
+}
+
+function showBookingSpinner(show){
+    let spinner = document.getElementById('booking-spinner');
+    const content = getBookingContainer();
+    if(show){
+        if(!spinner){
+            spinner = document.createElement('div');
+            spinner.id = 'booking-spinner';
+            spinner.className = 'booking-spinner';
+            spinner.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+            content.appendChild(spinner);
+        }
+    } else {
+        if(spinner) spinner.remove();
+    }
 }
 
 // UTILIDADES
@@ -319,10 +482,68 @@ function resetBooking() {
         name: '',
         email: '',
         phone: '',
-        notes: ''
+        notes: '',
+        upsell: false
     };
     showBookingStep(1);
 }
+
+// Modal control functions
+function openBookingModal(){
+    const modal = document.getElementById('booking-modal');
+    if(!modal) return;
+    modal.setAttribute('aria-hidden','false');
+    modal.style.display = 'flex';
+    showBookingStep(currentBooking.step || 1);
+}
+
+function closeBookingModal(){
+    const modal = document.getElementById('booking-modal');
+    if(!modal) return;
+    modal.setAttribute('aria-hidden','true');
+    modal.style.display = 'none';
+}
+
+// Wire modal controls on DOM ready
+document.addEventListener('DOMContentLoaded', ()=>{
+    const prev = document.getElementById('booking-prev');
+    const next = document.getElementById('booking-next');
+    const close = document.getElementById('booking-close');
+    const backdrop = document.getElementById('booking-backdrop');
+    const heroBtn = document.getElementById('hero-book');
+
+    if(prev) prev.addEventListener('click', previousStep);
+    if(next) next.addEventListener('click', ()=>{
+        // step-aware behavior: steps 1-2-3 -> nextStep, step 4 -> validateAndContinue, step 5 -> confirm
+        const step = currentBooking.step || 1;
+        if(step < 4) return nextStep();
+        if(step === 4) return validateAndContinue();
+        if(step === 5) return confirmBooking();
+    });
+    if(close) close.addEventListener('click', closeBookingModal);
+    if(backdrop) backdrop.addEventListener('click', closeBookingModal);
+    if(heroBtn) heroBtn.addEventListener('click', ()=>{ openBookingModal(); });
+
+        // also add open behavior to any element with data-open-booking or anchors to #booking
+        document.body.addEventListener('click', (e)=>{
+            const anchor = e.target.closest && e.target.closest('a[href="#booking"]');
+            const el = e.target.closest && e.target.closest('[data-open-booking]');
+            if(anchor){
+                e.preventDefault();
+                openBookingModal();
+                return;
+            }
+            if(el){
+                e.preventDefault();
+                const sid = el.dataset.serviceId || el.dataset.serviceId === '' ? el.dataset.serviceId : null;
+                const stylistId = el.dataset.stylistId || null;
+                // reset service/stylist selection depending on dataset
+                if(stylistId){ currentBooking.stylist = stylists.find(st=>String(st.id)===String(stylistId)); }
+                else if(sid){ if(sid !== '') currentBooking.service = services.find(s=>String(s.id)===String(sid)); }
+                openBookingModal();
+            }
+        });
+});
 
 // ESTILOS ADICIONALES PARA BOOKING
 const bookingStyles = `
@@ -407,6 +628,39 @@ const bookingStyles = `
 button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.booking-message {
+    margin-bottom: 12px;
+}
+.booking-message .message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e6e6e6;
+    background: #fff;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.04);
+}
+.booking-message .message.info { border-left: 4px solid var(--blue-primary); }
+.booking-message .message.error { border-left: 4px solid #e55353; }
+
+.booking-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:12px; }
+.booking-actions button { padding: 8px 12px; border-radius:8px; border: none; cursor: pointer; }
+.booking-actions button.btn-primary { background: linear-gradient(90deg,var(--pink-primary),var(--blue-primary)); color:#fff; }
+
+.booking-spinner { position: absolute; right: 28px; top: 18px; display:flex; gap:6px; }
+.booking-spinner .dot { width:8px; height:8px; background:var(--pink-primary); border-radius:50%; animation:blink 1s infinite; }
+.booking-spinner .dot:nth-child(2){ animation-delay:0.2s }
+.booking-spinner .dot:nth-child(3){ animation-delay:0.4s }
+@keyframes blink { 0%{opacity:0.2}50%{opacity:1}100%{opacity:0.2} }
+
+.input-error {
+    border-color: #e55353 !important;
+    box-shadow: 0 0 0 3px rgba(229,83,83,0.06);
+}
+.error-text {
+    color: #e55353;
+    margin-top: 6px;
+    font-size: 13px;
 }
 </style>
 `;

@@ -68,9 +68,85 @@ body {
     transition: color 0.3s;
 }
 
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 .nav-links a:hover {
     color: var(--pink-primary);
 }
+
+/* Hamburger menu styles */
+.hamburger{ display:none; background:transparent; border:none; font-size:20px; cursor:pointer }
+.nav-links { gap: var(--space-lg); }
+
+@media (max-width:900px){
+    .nav-links { position:fixed; top:0; left:0; right:0; background:linear-gradient(90deg,var(--pink-light),var(--blue-light)); padding:88px 20px 20px; transform:translateY(-110%); transition:transform .28s cubic-bezier(.2,.9,.2,1), opacity .2s ease; opacity:0; z-index:200; display:flex; flex-direction:column; gap:12px; box-shadow: 0 8px 24px rgba(16,24,40,0.12); border-bottom-left-radius:12px; border-bottom-right-radius:12px; }
+    .nav-links.open { transform:translateY(0); opacity:1; }
+    .hamburger{ display:inline-block }
+    .nav-links li { list-style:none }
+    .nav-actions { margin-left:auto }
+}
+
+/* Force visible behavior for mobile nav when toggled (more specific to avoid overrides) */
+@media (max-width:900px){
+    .nav-links.open {
+        transform: translateY(0) !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        max-height: calc(100vh - 40px);
+        overflow: auto;
+    }
+
+        /* Make links clearly visible on the gradient background */
+        .nav-links.open a {
+            color: #fff !important;
+            font-weight: 600;
+            font-size: 18px;
+            padding: 10px 8px;
+        }
+
+    .nav-links {
+        pointer-events: none; /* prevent clicks when hidden */
+    }
+
+    .hamburger { z-index: 300; position: relative; }
+}
+
+/* Backdrop behind mobile nav to ensure visibility and block page interactions */
+.nav-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(2,6,23,0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s ease;
+    z-index: 250; /* below .nav-links but above page */
+}
+.nav-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Increase nav z-index so it stays above backdrop and page content */
+.nav-links { z-index: 1001; }
+.nav-links.open { z-index: 1002; }
+
+/* Ensure hamburger stays above backdrop */
+.hamburger { z-index: 1010; }
+
+/* smoother slide animation */
+.nav-links { transition: transform .32s cubic-bezier(.2,.9,.2,1), opacity .22s ease; }
+
+/* Admin hero adjustments for visual parity */
+.admin-hero .container { padding-top:18px; padding-bottom:18px }
+
+/* small polish for buttons */
+.btn { transition: transform .12s ease, box-shadow .12s ease }
+.btn:active { transform: translateY(1px) }
+.btn:hover { box-shadow: 0 6px 14px rgba(16,24,40,0.06) }
 
 /* Carrito */
 .cart-icon {
@@ -97,7 +173,7 @@ body {
 /* Hero Section */
 .hero {
     background: linear-gradient(135deg, var(--pink-light), var(--blue-light));
-    padding: 100px 0;
+    padding: 72px 0; /* reducido para balance con sidebar */
     text-align: center;
 }
 
@@ -344,4 +420,238 @@ section h2 {
     .step {
         margin: 4px 0;
     }
+}
+
+/* Hero override para coherencia con index.html */
+.hero { text-align: center; color: white; padding: 3rem 1rem; background: linear-gradient(135deg, var(--pink-primary), var(--blue-primary)); }
+.hero .tagline { color: rgba(255,255,255,0.95); margin-bottom: 1rem; }
+
+/* Admin header branding */
+.admin-header { background: linear-gradient(90deg, rgba(236,72,153,0.06), rgba(59,130,246,0.04)); box-shadow:none; padding:12px 0; }
+.admin-header .logo-img { width:72px; height:72px; border-radius:12px; box-shadow: 0 8px 20px rgba(59,130,246,0.06); }
+.admin-header .logo { color: var(--pink-primary); font-size:20px }
+.admin-header .muted { color: var(--text-light); }
+
+/* Site logo (shared) */
+.logo-img { box-shadow: 0 8px 20px rgba(59,130,246,0.06); border-radius: 10px; }
+/* Default logo size for desktop (prevenir imágenes gigantes) */
+.navbar .logo-img,
+.brand-row .logo-img { width:64px; height:64px; object-fit:cover; }
+@media (max-width: 768px) {
+    .logo-img { width:44px; height:44px; }
+}
+
+/* On very small screens, hide the textual brand and show only the logo image */
+@media (max-width: 480px) {
+    .navbar .logo { display: none; }
+    .admin-header .logo { display: none; }
+}
+
+/* Admin UI enhancements to match site branding */
+.panel { padding: 1.25rem; border-radius: 16px; box-shadow: 0 12px 30px rgba(16,24,40,0.06); background: linear-gradient(180deg, #ffffff, #faf8fb); }
+.panel h2 { margin-top: 0; color: var(--text-dark); font-size: 22px; margin-bottom: 12px; }
+
+/* Admin sidebar layout */
+.admin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.admin-grid.with-sidebar {
+    grid-template-columns: 280px 1fr; /* sidebar + main */
+    align-items: start;
+}
+
+.admin-sidebar {
+    position: sticky;
+    top: 80px; /* below navbar */
+    align-self: start;
+    height: calc(100vh - 100px);
+    overflow: auto;
+    padding-top: 8px;
+}
+
+.admin-sidebar .sidebar-inner {
+    background: linear-gradient(180deg,#fff,#fbf8ff);
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(16,24,40,0.04);
+}
+
+.admin-sidebar h4 { margin: 0 0 8px 0; color: var(--text-dark); }
+.admin-sidebar select,
+.admin-sidebar input[type="date"],
+.admin-sidebar input[type="text"],
+.admin-sidebar input[type="password"],
+.admin-sidebar input[type="email"],
+.admin-sidebar input[type="search"],
+.admin-sidebar input,
+.admin-sidebar textarea {
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e6e9ef;
+}
+
+.sidebar-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.sidebar-toggle { display:block; margin-top:8px; }
+.change-pass { display:flex; gap:8px; flex-direction:column; }
+
+@media (max-width: 900px) {
+    .admin-grid.with-sidebar { grid-template-columns: 1fr; }
+    .admin-sidebar { position: relative; top: auto; height: auto; }
+    .hero { padding: 3rem 1rem; }
+}
+
+.list-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px; background: white; margin-bottom: 12px; box-shadow: 0 6px 14px rgba(15,23,42,0.03); }
+.list-item div:first-child { flex: 1; }
+.list-item strong { display:block; font-size:16px; color:var(--text-dark); }
+.list-item .tiny { color:var(--text-light); margin-top:6px; }
+
+/* Buttons: primary and neutral */
+.btn { background: transparent; border: 1px solid #e6e6e9; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-weight:600; color: var(--text-dark); transition: all 0.15s ease; }
+.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(59,130,246,0.06); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: linear-gradient(90deg,var(--pink-primary),var(--blue-primary)); color: #fff; border: none; padding: 8px 14px; border-radius: 10px; }
+.btn-primary:hover { box-shadow: 0 8px 30px rgba(59,130,246,0.12); }
+
+/* Form controls in admin */
+.panel input[type="text"], .panel input[type="number"], .panel input[type="date"], .panel select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid #eef2f6; background:white; box-shadow: inset 0 1px 0 rgba(0,0,0,0.02); }
+.panel .form-row { gap:10px; }
+.panel .form-group { margin-bottom:10px; }
+
+/* Reservation actions alignment */
+#reservations-list > .list-item > div:last-child, #products-list > .list-item > div:last-child { display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+
+/* Make export and filter controls look nicer */
+.admin-grid { grid-template-columns: 1fr 1fr; }
+.container > .muted { margin-top:6px; }
+
+/* Small screens adjustments for admin */
+@media (max-width: 900px){
+    .admin-grid { grid-template-columns: 1fr; }
+    #reservations-list > .list-item > div:last-child { align-items:flex-start; }
+}
+
+/* Reservations table styles (mobile) */
+.res-table { width:100%; border-collapse:collapse; margin-bottom:12px; }
+.res-table th, .res-table td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); text-align:left; font-size:13px; }
+.res-table thead th { background: linear-gradient(90deg, rgba(255,240,245,0.6), rgba(255,250,250,0.6)); color:var(--brand); }
+.res-table td.actions { white-space:nowrap; }
+.res-pager { display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:8px; }
+.res-pager .pager-info { color:rgba(0,0,0,0.6); }
+
+/* Ensure reservations panel appears first on small screens */
+@media (max-width:900px){
+    #reservations-panel { order: -1; }
+}
+
+/* disabled button state */
+.btn[disabled]{ opacity:0.45; cursor:not-allowed; }
+
+/* products table style (mobile) */
+.prod-table { width:100%; border-collapse:collapse; margin-bottom:12px }
+.prod-table th, .prod-table td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); text-align:left; font-size:13px }
+.prod-table thead th { background: linear-gradient(90deg, rgba(245,245,255,0.6), rgba(255,255,255,0.6)); color:var(--brand); }
+
+@media (max-width:900px){
+    /* make sure products panel appears after reservations */
+    #products-panel { order: 0; }
+}
+
+/* Icon buttons */
+.icon-btn { display:inline-flex; gap:8px; align-items:center; padding:6px 8px; border-radius:8px; border:1px solid rgba(0,0,0,0.06); background:#fff }
+.icon-btn svg { width:16px; height:16px; color:var(--pink-primary); }
+.icon-btn .btn-text { display:inline-block; font-size:13px; color:var(--text-dark); }
+
+@media (max-width:900px){
+    /* show icons only on mobile to save space */
+    .icon-btn .btn-text { display:none; }
+    .icon-btn { padding:6px; }
+}
+
+/* Simple panel de carrito (cuando no hay sidebar) */
+#cart-panel { position: fixed; right: 1rem; bottom: 4rem; background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); padding: 1rem; width: 320px; }
+#cart-panel[hidden] { display: none; }
+
+.card .actions .btn { padding: 0.5rem 0.75rem; }
+
+.sr-only { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+
+/* Modal booking */
+.modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal[aria-hidden="false"] { display: flex; }
+.modal-backdrop { position:absolute; inset:0; background:rgba(0,0,0,0.45); }
+.modal-panel { position:relative; width:100%; max-width:720px; background:white; border-radius:12px; box-shadow:0 20px 40px rgba(0,0,0,0.3); overflow:hidden; z-index:1001; }
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;background:linear-gradient(90deg,var(--pink-primary),var(--blue-primary));color:white}
+.modal-body{padding:20px;max-height:60vh;overflow:auto}
+.modal-footer{display:flex;justify-content:space-between;padding:16px}
+.modal .btn{border-radius:8px;padding:8px 12px}
+.modal .btn-primary{padding:8px 14px}
+
+/* Sakura petals */
+.sakura-petal {
+    position: fixed;
+    pointer-events: none;
+    background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.3)), linear-gradient(135deg, #ffd1e8 0%, #ff8fb1 100%);
+    border-radius: 50% 50% 50% 20%;
+    transform-origin: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    z-index: 1200;
+    will-change: transform, opacity;
+}
+
+/* slight flourish when petals are added */
+.sakura-petal::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+}
+
+/* Input error styling for admin modal */
+.input-error { border-color: #f87171 !important; box-shadow: 0 0 0 3px rgba(248,113,113,0.06); }
+.error-text { color: #b91c1c; font-size: 13px; margin-top: 6px; }
+
+/* Strong overrides for mobile nav to ensure visibility and interactivity */
+@media (max-width:900px){
+    .nav-backdrop { z-index: 9980 !important; }
+    .nav-links { z-index: 9990 !important; pointer-events: none !important; }
+    .nav-links.open { z-index: 9991 !important; pointer-events: auto !important; transform: translateY(0) !important; opacity: 1 !important; }
+    .nav-links.open a { pointer-events: auto !important; color: #fff !important; }
+    .hamburger { z-index: 10000 !important; }
+}
+
+/* New simplified nav styles to work with js/nav.js */
+/* Keep these rules specific and minimal to reduce conflicts */
+.nav-links {
+    display: none; /* hidden by default on small screens */
+    background: var(--white);
+    overflow: auto;
+}
+.nav-links.open {
+    display: block;
+    box-shadow: 0 8px 30px rgba(2,6,23,0.12);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    z-index: 1002;
+}
+.nav-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.32);
+    z-index: 1001;
+    opacity: 0;
+    transition: opacity .18s ease;
+    pointer-events: none;
+}
+.nav-backdrop.visible { opacity: 1; pointer-events: auto; }
+.hamburger { background: transparent; border: none; }
+
+@media (min-width: 800px) {
+    .nav-links { display: flex !important; position: static !important; max-height: none !important; }
+    .nav-backdrop { display: none !important; }
+    .hamburger { display: none !important; }
 }

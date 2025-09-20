@@ -1,0 +1,13 @@
+{
+  "name": "pink-blueberry-tests",
+  "version": "1.0.0",
+  "description": "Test harness for PinkBlueBerry frontend features (local tests)",
+  "scripts": {
+    "test": "mocha --require js/test/test-setup.js 'js/test/**/*.js' --exit"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "jsdom": "^22.1.0",
+    "mocha": "^10.2.0"
+  }
+}
