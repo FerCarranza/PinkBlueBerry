@@ -420,6 +420,19 @@ section h2 {
 .admin-header .logo { color: var(--pink-primary); font-size:20px }
 .admin-header .muted { color: var(--text-light); }
 
+/* Admin navbar: strong background as per challenge styles */
+.navbar.admin-header {
+  background: linear-gradient(90deg, var(--pink-primary), var(--blue-primary)) !important;
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(236,72,153,0.25);
+}
+.navbar.admin-header .logo { color: #fff; }
+.navbar.admin-header .nav-links a { color: #fff; }
+.navbar.admin-header .nav-links a.active { color: #fff; }
+.navbar.admin-header .nav-links a:hover { color: #fff; opacity: 0.9; }
+.navbar.admin-header .hamburger { color: #fff; }
+.navbar.admin-header .cart-icon { color: #fff; }
+
 /* Site logo (shared) */
 .logo-img { box-shadow: 0 8px 20px rgba(59,130,246,0.06); border-radius: 10px; }
 /* Default logo size for desktop (prevenir imágenes gigantes) */
