@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Pink Blueberry Salon</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navegación -->
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">The Pink Blueberry</h1>
+            <ul class="nav-links">
+                <li><a href="#home">Inicio</a></li>
+                <li><a href="#services">Servicios</a></li>
+                <li><a href="#booking">Reservar</a></li>
+                <li><a href="#shop">Tienda</a></li>
+            </ul>
+            <!-- Icono del carrito -->
+            <div class="cart-icon" onclick="toggleCart()">
+                🛒 <span id="cart-count">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sección Hero -->
+    <section id="home" class="hero">
+        <div class="container">
+            <h2 class="hero-title">The Pink Blueberry</h2>
+            <p class="hero-subtitle">Donde el Lujo se Encuentra con la Belleza Natural</p>
+            <button class="btn-primary" onclick="scrollToBooking()">Reservar Ahora</button>
+        </div>
+    </section>
+
+    <!-- Servicios -->
+    <section id="services" class="services">
+        <div class="container">
+            <h2>Nuestros Servicios</h2>
+            <div id="services-grid" class="services-grid">
+                <!-- Los servicios se cargarán con JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Sistema de Reservas -->
+    <section id="booking" class="booking">
+        <div class="container">
+            <h2>Reserva tu Cita</h2>
+            <div class="booking-steps">
+                <!-- Indicador de progreso -->
+                <div class="progress-bar">
+                    <div class="step active">1. Servicio</div>
+                    <div class="step">2. Estilista</div>
+                    <div class="step">3. Fecha/Hora</div>
+                    <div class="step">4. Información</div>
+                    <div class="step">5. Confirmar</div>
+                </div>
+                
+                <!-- Contenido del paso actual -->
+                <div id="booking-content" class="booking-content">
+                    <!-- El contenido se cargará dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tienda -->
+    <section id="shop" class="shop">
+        <div class="container">
+            <h2>Nuestra Tienda</h2>
+            <div class="product-filters">
+                <button onclick="filterProducts('all')" class="filter-btn active">Todos</button>
+                <button onclick="filterProducts('hair')" class="filter-btn">Cuidado Capilar</button>
+                <button onclick="filterProducts('soap')" class="filter-btn">Jabones Orgánicos</button>
+            </div>
+            <div id="products-grid" class="products-grid">
+                <!-- Los productos se cargarán con JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Carrito Lateral -->
+    <div id="cart-sidebar" class="cart-sidebar">
+        <div class="cart-header">
+            <h3>Tu Carrito</h3>
+            <button onclick="toggleCart()">✕</button>
+        </div>
+        <div id="cart-items" class="cart-items">
+            <!-- Items del carrito -->
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <strong>Total:</strong>
+                <span id="cart-total">$0</span>
+            </div>
+            <button class="btn-primary">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/booking.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
